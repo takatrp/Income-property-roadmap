@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>収益不動産 取得資金シミュレーター｜r10</title>
+  <title>収益不動産 取得資金シミュレーター｜r11</title>
   <style>
     :root{
-      --bg:#f8fafc; --card:#fff; --text:#0f172a; --sub:#64748b; --border:#cbd5e1;
+      --bg:#f1f5f9; --card:#fff; --text:#0f172a; --sub:#64748b; --border:#cbd5e1;
       --primary:#0f766e; --primary-light:#ccfbf1;
       --ok:#166534; --ok-bg:#dcfce7;
       --warn:#b45309; --warn-bg:#fffbeb;
@@ -16,14 +16,22 @@
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",sans-serif;line-height:1.4;font-size:15px}
     
-    /* Layout */
+    /* Layout Wrapper */
     .container{max-width:1100px;margin:0 auto;padding:1rem}
-    .grid-top{display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1rem}
-    @media(min-width:960px){.grid-top{grid-template-columns:340px 1fr}}
+    
+    /* Grid System */
+    .grid-inputs{display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1rem}
+    .grid-dashboard{display:grid;grid-template-columns:1fr;gap:1rem}
+    
+    /* Desktop Adjustments */
+    @media(min-width:900px){
+      .grid-inputs{grid-template-columns:1fr 1fr} /* Inputs side-by-side */
+      .grid-dashboard{grid-template-columns:350px 1fr} /* Status Left, Charts Right */
+    }
 
-    /* Card */
-    .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1rem;overflow:hidden}
-    .card-hd{padding:0.6rem 1rem;border-bottom:1px solid var(--border);background:#f1f5f9;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:0.95rem}
+    /* Cards */
+    .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;height:100%}
+    .card-hd{padding:0.6rem 1rem;border-bottom:1px solid var(--border);background:#f8fafc;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:0.95rem;color:var(--text)}
     .card-bd{padding:1rem}
 
     /* Inputs */
@@ -34,63 +42,59 @@
     .row{display:flex;gap:0.8rem}
     .row > *{flex:1}
     
-    /* Chips / Buttons */
-    .chips{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.3rem;justify-content:flex-end}
-    .chip{font-size:0.7rem;padding:0.2rem 0.6rem;border:1px solid var(--border);border-radius:99px;background:#fff;cursor:pointer;color:var(--sub);transition:all 0.1s}
-    .chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
-    
-    .btn-reset{font-size:0.8rem;padding:0.3rem 0.8rem;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;color:var(--sub);margin-left:0.5rem}
-    .btn-reset:hover{background:#f1f5f9;color:#000}
+    /* Buttons */
+    .chip{font-size:0.75rem;padding:0.3rem 0.8rem;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;color:var(--sub);font-weight:bold}
+    .chip:hover{border-color:var(--primary);color:var(--primary)}
+    .btn-reset{font-size:0.75rem;padding:0.3rem 0.8rem;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;color:var(--sub);margin-left:0.5rem;font-weight:bold}
+    .btn-reset:hover{background:#fee2e2;color:#991b1b;border-color:#fee2e2}
 
-    /* Dashboard Status */
-    .status-box{padding:0.8rem;border-radius:var(--radius);margin-bottom:0.8rem;border:1px solid transparent;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+    /* Dashboard: Status Box */
+    .status-box{padding:1rem;border-radius:var(--radius);border:1px solid transparent;margin-bottom:1rem;height:100%}
     .status-box.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
     .status-box.ng{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
     
-    .status-main{flex:1}
-    .status-row{display:flex;align-items:baseline;gap:0.5rem}
-    .status-icon{font-size:1.2rem}
-    .status-title{font-weight:900;font-size:1.1rem}
-    .status-gap{font-size:0.9rem}
+    .status-main{text-align:center;margin-bottom:1rem}
+    .status-icon{font-size:2rem;display:block;margin-bottom:0.2rem}
+    .status-text{font-size:1.4rem;font-weight:900}
+    .status-gap-text{font-size:0.95rem;opacity:0.9}
 
-    .kpi-compact{display:flex;gap:1rem;text-align:right}
-    .kpi-item{min-width:80px}
-    .kpi-lbl{font-size:0.65rem;opacity:0.8;font-weight:bold}
-    .kpi-val{font-size:1rem;font-weight:900;line-height:1.2}
+    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+    .kpi-card{background:rgba(255,255,255,0.6);padding:0.5rem;border-radius:6px;text-align:center}
+    .kpi-lbl{font-size:0.7rem;font-weight:bold;opacity:0.8}
+    .kpi-val{font-size:1rem;font-weight:900}
 
-    /* Insight Box (Reverse Calc) */
-    .insight-box{margin-bottom:0.8rem;background:#fff;border:1px dashed var(--warn);border-radius:var(--radius);padding:0.8rem;font-size:0.9rem;display:none}
-    .insight-row{display:flex;align-items:center;gap:0.5rem;color:#92400e}
-    .insight-val{font-weight:900;color:#b45309;font-size:1.05rem}
+    /* Dashboard: Insight (Reverse Calc) */
+    .insight-box{background:#fff;border:1px dashed var(--warn);border-radius:var(--radius);padding:0.8rem;margin-top:1rem;display:none}
+    .insight-row{display:flex;align-items:center;gap:0.4rem;color:#92400e;font-size:0.9rem;justify-content:center}
+    .insight-val{font-weight:900;color:#b45309;font-size:1.1rem}
 
-    /* Charts */
-    .bar-track{height:1.8rem;background:#f1f5f9;border-radius:4px;overflow:hidden;display:flex;margin:0.4rem 0;border:1px solid #e2e8f0}
-    .bar-seg{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.7rem;font-weight:bold;white-space:nowrap;overflow:hidden;transition:width 0.5s}
+    /* Dashboard: Charts Area */
+    .bar-track{height:2rem;background:#f1f5f9;border-radius:4px;overflow:hidden;display:flex;margin:0.5rem 0;border:1px solid #e2e8f0}
+    .bar-seg{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;font-weight:bold;white-space:nowrap;overflow:hidden;transition:width 0.6s}
     .bs-loan{background:#94a3b8} 
     .bs-now{background:#0f766e} 
     .bs-fut{background:#2dd4bf;color:#0f4c3a} 
     .bs-gap{background:#ef4444}
     
-    .chart-container{position:relative;height:140px;width:100%;margin-top:1rem;border-left:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .chart-container{position:relative;height:160px;width:100%;margin-top:1.5rem;border-left:1px solid var(--border);border-bottom:1px solid var(--border)}
     svg{width:100%;height:100%;overflow:visible}
     .line-target{stroke:#ef4444;stroke-width:2;stroke-dasharray:4}
-    .line-plan{stroke:#0f766e;stroke-width:2;fill:none}
+    .line-plan{stroke:#0f766e;stroke-width:3;fill:none}
     .dot{stroke-width:2;r:4;fill:#fff}
 
     /* PL Table */
-    .tbl-wrap{overflow-x:auto}
-    .tbl{width:100%;border-collapse:collapse;font-size:0.85rem;min-width:300px} /* min-width調整 */
-    .tbl th,.tbl td{padding:0.5rem;border-bottom:1px solid #e2e8f0;text-align:right}
-    .tbl th{text-align:left;color:var(--sub);background:#f8fafc;width:60%;position:sticky;left:0;border-right:1px solid #e2e8f0}
-    .tbl input{border:1px solid #e2e8f0;background:#fff;width:100%;padding:0.3rem}
-    .tbl input:focus{background:#fff;border-color:var(--primary)}
-    .tbl tr:last-child td{font-weight:bold;background:#f0fdf4;border-bottom:none;color:var(--primary)}
+    .tbl{width:100%;border-collapse:collapse;font-size:0.85rem}
+    .tbl th,.tbl td{padding:0.5rem;border-bottom:1px solid #f1f5f9;text-align:right}
+    .tbl th{text-align:left;color:var(--sub);width:60%;padding-left:0.5rem}
+    .tbl tr:last-child td{font-weight:bold;color:var(--primary);border-bottom:none}
+    .tbl input{padding:0.3rem}
 
     @media print{
       .no-print{display:none}
       body{background:#fff}
       .card{border:1px solid #000;box-shadow:none;page-break-inside:avoid}
-      .grid-top{display:block}
+      .grid-inputs, .grid-dashboard{display:block}
+      .status-box{border:1px solid #000;color:#000;background:#fff!important}
     }
   </style>
 </head>
@@ -98,170 +102,162 @@
 
 <div class="container">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-    <h1 style="font-size:1.2rem;margin:0;font-weight:800;color:var(--primary)">収益不動産 取得資金シミュレーター <span style="font-size:0.8rem;font-weight:normal;color:var(--sub)">r10</span></h1>
+    <h1 style="font-size:1.2rem;margin:0;font-weight:800;color:var(--primary)">収益不動産 取得資金シミュレーター <span style="font-size:0.8rem;font-weight:normal;color:var(--sub)">r11</span></h1>
     <div class="no-print">
       <button class="chip" onclick="window.print()">🖨 印刷/PDF</button>
       <button class="btn-reset" id="btnReset">↺ リセット</button>
     </div>
   </div>
 
-  <div class="grid-top">
+  <div class="grid-inputs">
     
-    <div class="no-print-break">
-      <section class="card">
-        <div class="card-hd">1. 目標設定</div>
-        <div class="card-bd">
+    <section class="card">
+      <div class="card-hd">1. 目標設定</div>
+      <div class="card-bd">
+        <div class="input-group">
+          <label>物件価格（円）</label>
+          <input id="price" type="text" inputmode="numeric" placeholder="例: 80,000,000">
+        </div>
+
+        <div class="row">
           <div class="input-group">
-            <label>物件価格（円）</label>
-            <input id="price" type="text" inputmode="numeric" placeholder="例: 80,000,000">
-            </div>
-
-          <div class="row">
-            <div class="input-group">
-              <label>LTV (%)</label>
-              <input id="ltv" type="number" value="80">
-            </div>
-            <div class="input-group">
-              <label>諸費用 (%)</label>
-              <input id="costRate" type="number" value="8">
-            </div>
+            <label>LTV (%)</label>
+            <input id="ltv" type="number" value="80">
           </div>
-
           <div class="input-group">
-            <label>取得時期（月後）</label>
-            <input id="months" type="number" value="36">
-            <div style="font-size:0.7rem;color:var(--sub);text-align:right" id="targetDate"></div>
-          </div>
-
-          <div class="input-group" style="border-top:1px dashed var(--border);padding-top:0.8rem;margin-top:0.8rem">
-            <label>現在の自己資金（円）</label>
-            <input id="cashNow" type="text" inputmode="numeric" placeholder="0">
+            <label>諸費用 (%)</label>
+            <input id="costRate" type="number" value="8">
           </div>
         </div>
-      </section>
-    </div>
 
-    <div>
+        <div class="input-group">
+          <label>取得時期（月後）</label>
+          <input id="months" type="number" value="36">
+          <div style="font-size:0.7rem;color:var(--sub);text-align:right" id="targetDate"></div>
+        </div>
+
+        <div class="input-group" style="border-top:1px dashed var(--border);padding-top:0.8rem;margin-top:0.8rem">
+          <label>現在の自己資金（円）</label>
+          <input id="cashNow" type="text" inputmode="numeric" placeholder="0">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-hd">
+        <span>2. 直近のPL（1期分）</span>
+        <span style="font-size:0.75rem;font-weight:normal">将来の積立原資を試算</span>
+      </div>
+      <div class="card-bd" style="padding:0.5rem 1rem">
+        <div style="margin-bottom:0.5rem;text-align:right">
+          <label style="display:inline;margin-right:0.5rem">実効税率</label>
+          <input id="taxRate" type="number" value="30" style="width:60px;padding:0.2rem;text-align:center">%
+        </div>
+
+        <table class="tbl">
+          <tr>
+            <th>売上高</th>
+            <td><input class="pl-in" id="s1" inputmode="numeric"></td>
+          </tr>
+          <tr>
+            <th>変動費</th>
+            <td><input class="pl-in" id="v1" inputmode="numeric"></td>
+          </tr>
+          <tr>
+            <th>固定費</th>
+            <td><input class="pl-in" id="f1" inputmode="numeric"></td>
+          </tr>
+          <tr>
+            <th>減価償却(非資金)</th>
+            <td><input class="pl-in" id="d1" inputmode="numeric"></td>
+          </tr>
+          <tr style="background:#f8fafc;color:var(--sub)">
+            <th>税引前利益</th>
+            <td id="pbt1">0</td>
+          </tr>
+          <tr style="color:var(--sub)">
+            <th>税額(概算)</th>
+            <td id="tax1">0</td>
+          </tr>
+          <tr>
+            <th>借入返済 (元金)</th>
+            <td><input class="pl-in" id="out1" inputmode="numeric" placeholder="公庫返済等"></td>
+          </tr>
+          <tr style="border-top:2px solid var(--primary);background:#f0fdf4">
+            <th>★ 税後CF(内部留保)</th>
+            <td id="fcf1">0</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid-dashboard">
+    
+    <div style="display:flex;flex-direction:column">
       <div id="statusBox" class="status-box ng">
         <div class="status-main">
-          <div class="status-row">
-            <span class="status-icon" id="statusIcon">⚠️</span>
-            <span class="status-title" id="statusText">資金不足</span>
-          </div>
-          <div class="status-gap">不足: <span id="statusGap" style="font-weight:bold">0</span> 円</div>
+          <span class="status-icon" id="statusIcon">⚠️</span>
+          <div class="status-text" id="statusText">資金不足</div>
+          <div class="status-gap-text">あと <span id="statusGap" style="font-weight:bold">0</span> 円 足りません</div>
         </div>
         
-        <div class="kpi-compact">
-          <div class="kpi-item">
+        <div class="kpi-grid">
+          <div class="kpi-card">
             <div class="kpi-lbl">月あたり不足</div>
             <div class="kpi-val" id="monthlyGap">¥0</div>
           </div>
-          <div class="kpi-item">
+          <div class="kpi-card">
             <div class="kpi-lbl">必要自己資金</div>
             <div class="kpi-val" id="needOwn">¥0</div>
           </div>
         </div>
+
+        <div id="insightBox" class="insight-box">
+          <div class="insight-row">
+            <span>💡 月商をあと</span>
+            <span class="insight-val" id="neededSales">¥0</span>
+            <span>UP</span>
+          </div>
+          <div style="font-size:0.7rem;color:var(--sub);text-align:center;margin-top:0.2rem">
+            (現在の利益率から逆算)
+          </div>
+        </div>
       </div>
-
-      <div id="insightBox" class="insight-box">
-        <div class="insight-row">
-          <span>💡 対策: 月商をあと</span>
-          <span class="insight-val" id="neededSales">¥0</span>
-          <span>アップで達成可</span>
-        </div>
-        <div style="font-size:0.75rem;color:var(--sub);margin-top:0.3rem">
-          ※直近の利益率・税率をもとに逆算（税引前利益を確保）
-        </div>
-      </div>
-
-      <section class="card">
-        <div class="card-hd" style="padding:0.5rem 1rem">
-          <span>資金シミュレーション</span>
-          <span style="font-weight:normal;font-size:0.8rem">必要総額: <span id="labelTotal">0</span></span>
-        </div>
-        <div class="card-bd">
-          
-          <div class="bar-track">
-            <div id="segLoan" class="bar-seg bs-loan" style="width:0%"></div>
-            <div id="segNow" class="bar-seg bs-now" style="width:0%"></div>
-            <div id="segFut" class="bar-seg bs-fut" style="width:0%"></div>
-            <div id="segGap" class="bar-seg bs-gap" style="width:0%"></div>
-          </div>
-          <div style="display:flex;gap:0.8rem;flex-wrap:wrap;font-size:0.7rem;color:var(--sub);margin-top:0.3rem">
-            <span style="color:#64748b">■借入</span>
-            <span style="color:#0f766e">■現資金</span>
-            <span style="color:#2dd4bf;font-weight:bold">■PL積立</span>
-            <span style="color:#ef4444;font-weight:bold">■不足</span>
-          </div>
-
-          <div class="chart-container">
-            <svg id="lineChart" viewBox="0 0 300 140" preserveAspectRatio="none"></svg>
-            <div style="position:absolute;top:-5px;right:0;font-size:0.65rem;color:#ef4444;font-weight:bold">必要額</div>
-            <div style="position:absolute;bottom:-18px;left:0;font-size:0.65rem;color:var(--sub)">現在</div>
-            <div style="position:absolute;bottom:-18px;right:0;font-size:0.65rem;color:var(--sub)" id="labelChartEnd">3年後</div>
-          </div>
-        </div>
-      </section>
     </div>
+
+    <section class="card">
+      <div class="card-hd">
+        <span>資金シミュレーション</span>
+        <span style="font-weight:normal;font-size:0.8rem">必要総額: <span id="labelTotal">0</span></span>
+      </div>
+      <div class="card-bd">
+        <div style="font-size:0.75rem;color:var(--sub);margin-bottom:0.2rem">調達構成</div>
+        <div class="bar-track">
+          <div id="segLoan" class="bar-seg bs-loan" style="width:0%"></div>
+          <div id="segNow" class="bar-seg bs-now" style="width:0%"></div>
+          <div id="segFut" class="bar-seg bs-fut" style="width:0%"></div>
+          <div id="segGap" class="bar-seg bs-gap" style="width:0%"></div>
+        </div>
+        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;font-size:0.7rem;color:var(--sub);margin-top:0.3rem">
+          <span style="color:#64748b">■借入</span>
+          <span style="color:#0f766e">■現資金</span>
+          <span style="color:#2dd4bf;font-weight:bold">■PL積立</span>
+          <span style="color:#ef4444;font-weight:bold">■不足</span>
+        </div>
+
+        <div class="chart-container">
+          <svg id="lineChart" viewBox="0 0 400 160" preserveAspectRatio="none"></svg>
+          <div style="position:absolute;top:-5px;right:0;font-size:0.7rem;color:#ef4444;font-weight:bold">必要額</div>
+          <div style="position:absolute;bottom:-20px;left:0;font-size:0.7rem;color:var(--sub)">現在</div>
+          <div style="position:absolute;bottom:-20px;right:0;font-size:0.7rem;color:var(--sub)" id="labelChartEnd">3年後</div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--sub);text-align:right;margin-top:1.5rem">
+          緑の実線が目標（赤点線）に届くようPLを改善しましょう
+        </div>
+      </div>
+    </section>
   </div>
-
-  <section class="card">
-    <div class="card-hd">
-      <span>2. 直近のPL（1期分）</span>
-      <span style="font-size:0.8rem;font-weight:normal;color:var(--sub)">ここから将来の積立額を試算</span>
-    </div>
-    <div class="card-bd">
-      <div style="max-width:150px;margin-bottom:0.8rem">
-        <label>実効税率 (%)</label>
-        <input id="taxRate" type="number" value="30">
-      </div>
-
-      <div class="tbl-wrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>項目 (円)</th>
-              <th>金額</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>売上高</th>
-              <td><input class="pl-in" id="s1" inputmode="numeric"></td>
-            </tr>
-            <tr>
-              <th>変動費</th>
-              <td><input class="pl-in" id="v1" inputmode="numeric"></td>
-            </tr>
-            <tr>
-              <th>固定費</th>
-              <td><input class="pl-in" id="f1" inputmode="numeric"></td>
-            </tr>
-            <tr>
-              <th>減価償却(非資金)</th>
-              <td><input class="pl-in" id="d1" inputmode="numeric"></td>
-            </tr>
-            <tr style="background:#f8fafc;color:var(--sub)">
-              <th>税引前利益</th>
-              <td id="pbt1">0</td>
-            </tr>
-            <tr style="color:var(--sub)">
-              <th>税額(概算)</th>
-              <td id="tax1">0</td>
-            </tr>
-            <tr>
-              <th>借入返済 (元金)</th>
-              <td><input class="pl-in" id="out1" inputmode="numeric" placeholder="公庫返済等"></td>
-            </tr>
-            <tr style="border-top:2px solid var(--primary)">
-              <th>★ 税後CF(内部留保)</th>
-              <td id="fcf1" style="font-weight:900;color:var(--primary)">0</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
 </div>
 
 <script>
@@ -295,14 +291,13 @@ function update() {
   const pbt = s1 - v1 - f1 - d1;
   const tax = Math.max(0, pbt * taxRate);
   const np = pbt - tax;
-  const fcf = np + d1 - out1;
+  const fcf = np + d1 - out1; // Annual FCF
 
   el('pbt1').innerText = fmt(Math.round(pbt));
   el('tax1').innerText = fmt(Math.round(tax));
   el('fcf1').innerText = fmt(Math.round(fcf));
 
-  // 3. Future Cash Projection (Assume annual FCF continues)
-  // Monthly Capacity = Annual FCF / 12
+  // 3. Future Cash Projection
   const monthlyFCF = fcf / 12;
   const futureCash = monthlyFCF * months;
   
@@ -333,7 +328,6 @@ function update() {
     el('statusText').innerText = "達成可能";
     statusGap.innerText = "0";
     el('monthlyGap').innerText = "不足なし";
-    el('monthlyGap').style.color = "var(--ok)";
     el('needOwn').innerText = yen(needOwn);
   } else {
     statusBox.className = "status-box ng";
@@ -341,23 +335,17 @@ function update() {
     el('statusText').innerText = "資金不足";
     statusGap.innerText = fmt(Math.round(gap));
     el('monthlyGap').innerText = yen(monthlyGap);
-    el('monthlyGap').style.color = "var(--danger)";
     el('needOwn').innerText = yen(needOwn);
   }
 
   // 6. Action Insight (Reverse Calc)
   const insightBox = el('insightBox');
   if(gap > 0 && s1 > 0){
-    // 粗利率
     const marginRate = (s1 - v1) / s1; 
-    
     if(marginRate > 0){
       const taxEffect = 1 - taxRate;
-      // 必要な追加税引前利益 = 月不足額 / (1-税率)
-      // 必要な追加売上 = 必要な追加税引前利益 / 粗利率
       const neededPBT = monthlyGap / taxEffect;
       const neededSales = neededPBT / marginRate;
-      
       el('neededSales').innerText = yen(neededSales);
       insightBox.style.display = 'block';
     } else {
@@ -382,7 +370,7 @@ function update() {
 
   // 8. Line Chart (SVG)
   const svg = el('lineChart');
-  const w = 300, h = 140;
+  const w = 400, h = 160;
   const targetVal = needOwn; 
   const preparedVal = totalPrepared;
   const maxY = Math.max(targetVal, preparedVal) * 1.2 || 100000;
@@ -409,7 +397,6 @@ function update() {
 function reset(){
   if(!confirm("入力をリセットしますか？")) return;
   document.querySelectorAll('input').forEach(i => i.value = "");
-  // defaults
   el('ltv').value = "80";
   el('costRate').value = "8";
   el('months').value = "36";
