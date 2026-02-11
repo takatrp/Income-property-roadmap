@@ -1,922 +1,415 @@
 <!doctype html>
-<!--
-  internal version: r2
-  変更点（r1→r2）
-  - 3年PL/CF（簡易）入力を追加（税後CF→内部留保）
-  - 購入時点の想定自己資金（計画ベース）を自動算出し、必要自己資金とのギャップを表示
-  - 手入力の「毎月積立」方式も残し、計画ベースと比較できるようにした
-  注意：本ツールは概算・仮置き用です（税務/会計/資金繰りの精緻化は面談で）
--->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>収益不動産 取得資金ロードマップ｜r2</title>
-  <meta name="description" content="収益物件の価格と時期から、必要自己資金・月次積立・ローン返済・DSCR、さらに法人3年PL/CFから内部留保を概算します。" />
+  <title>収益不動産 取得資金シミュレーター｜r3</title>
   <style>
     :root{
-      --bg:#f7fafc; --card:#fff; --ink:#1a202c; --sub:#4a5568; --line:#e2e8f0;
-      --pri:#578899; --pri2:#3f6f80;
-      --ok:#2f855a; --warn:#c05621; --bad:#c53030;
-      --radius:14px;
-      --shadow:0 2px 12px rgba(0,0,0,.06);
+      --bg:#f8fafc; --card:#fff; --text:#1e293b; --sub:#64748b; --border:#e2e8f0;
+      --primary:#0f766e; --primary-light:#ccfbf1;
+      --ok:#15803d; --ok-bg:#dcfce7;
+      --warn:#b45309; --warn-bg:#fef3c7;
+      --danger:#b91c1c; --danger-bg:#fee2e2;
+      --radius:12px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--ink);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif}
-    header{
-      position:sticky;top:0;z-index:20;
-      background:linear-gradient(180deg,#fff,rgba(255,255,255,.92));
-      border-bottom:1px solid var(--line); backdrop-filter:blur(4px)
-    }
-    .bar{max-width:1100px;margin:0 auto;padding:.85rem 1rem;display:flex;gap:.7rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .ttl{font-weight:900}
-    .badge{background:var(--pri);color:#fff;border-radius:999px;padding:.18rem .55rem;font-size:.78rem}
-    .btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:.55rem .9rem;font-weight:800;cursor:pointer}
-    .btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",sans-serif;line-height:1.5}
+    
+    /* Layout */
+    .container{max-width:1100px;margin:0 auto;padding:1rem}
+    .grid-2{display:grid;grid-template-columns:1fr;gap:1.5rem}
+    @media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}
 
-    .wrap{max-width:1100px;margin:1rem auto 5rem;padding:0 1rem}
-    .grid{display:grid;gap:.9rem}
-    @media(min-width:960px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
-    .hd{padding:.85rem 1rem;border-bottom:1px dashed var(--line);display:flex;gap:.6rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .bd{padding:1rem}
-    .mini{color:var(--sub);font-size:.88rem}
-    label{display:block;font-weight:800;margin:.2rem 0}
-    input,select{width:100%;border:1px solid var(--line);border-radius:12px;padding:.6rem .75rem;font-size:1rem;background:#fff}
-    input[data-commas]{text-align:right}
-    .row{display:grid;grid-template-columns:1fr;gap:.6rem}
-    @media(min-width:640px){.row{grid-template-columns:1fr 1fr}}
-    .chips{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.35rem}
-    .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:.22rem .6rem;font-weight:800;cursor:pointer;font-size:.9rem}
-    .chip:hover{border-color:var(--pri)}
-    .pill{display:inline-flex;gap:.35rem;align-items:center;border:1px solid var(--line);border-radius:999px;padding:.22rem .65rem;background:#fff;font-size:.92rem}
-    .pill b{font-weight:900}
-    .kpi{display:flex;gap:.6rem;flex-wrap:wrap}
-    .kpi .pill{background:#f1f5f9}
-    .sep{height:1px;background:linear-gradient(to right,transparent,var(--line),transparent);margin:.85rem 0}
+    /* Card */
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden;border:1px solid var(--border)}
+    .card-hd{padding:1rem;border-bottom:1px solid var(--border);background:#f1f5f9;display:flex;justify-content:space-between;align-items:center}
+    .card-ttl{font-weight:bold;color:var(--text)}
+    .card-bd{padding:1.25rem}
 
-    .good{color:var(--ok);font-weight:900}
-    .warn{color:var(--warn);font-weight:900}
-    .bad{color:var(--bad);font-weight:900}
+    /* Inputs */
+    label{display:block;font-size:0.85rem;color:var(--sub);font-weight:bold;margin-bottom:0.4rem}
+    input,select{width:100%;padding:0.6rem;border:1px solid var(--border);border-radius:6px;font-size:1rem;background:#fff}
+    input:focus{outline:2px solid var(--primary);border-color:transparent}
+    .input-group{margin-bottom:1.2rem}
+    .row{display:flex;gap:1rem}
+    .row > *{flex:1}
+    
+    /* Chips */
+    .chips{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.4rem}
+    .chip{font-size:0.8rem;padding:0.2rem 0.6rem;border:1px solid var(--border);border-radius:99px;background:#fff;cursor:pointer;color:var(--sub)}
+    .chip:hover{border-color:var(--primary);color:var(--primary)}
 
-    .tbl{width:100%;border-collapse:collapse}
-    .tbl th,.tbl td{border-bottom:1px solid #edf2f7;padding:.5rem .35rem;vertical-align:top}
-    .tbl th{text-align:left;color:var(--sub);font-weight:900}
-    .tbl td:last-child{text-align:right}
+    /* Dashboard (Result) */
+    .status-box{padding:1.5rem;text-align:center;border-radius:var(--radius);margin-bottom:1.5rem;border:2px solid transparent}
+    .status-box.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+    .status-box.ng{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+    .status-icon{font-size:2rem;margin-bottom:0.5rem;display:block}
+    .status-main{font-size:1.8rem;font-weight:900}
+    .status-sub{font-size:1rem;opacity:0.9}
 
-    .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:.7rem .8rem;color:#7c2d12}
-    .note.blue{background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a}
+    /* Bar Chart (CSS) */
+    .bar-chart-wrap{margin:1.5rem 0}
+    .bar-label{display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.3rem;font-weight:bold}
+    .bar-track{height:2.5rem;background:#f1f5f9;border-radius:8px;overflow:hidden;display:flex;position:relative}
+    .bar-seg{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.8rem;font-weight:bold;white-space:nowrap;overflow:hidden}
+    .bs-loan{background:#94a3b8} /* 借入 */
+    .bs-now{background:#0f766e} /* 自己資金(現) */
+    .bs-fut{background:#2dd4bf;color:#0f4c3a} /* 内部留保 */
+    .bs-gap{background:#ef4444;position:relative} /* 不足 */
+    .bs-gap::after{content:"不足";position:absolute;right:10px;color:#fff;font-size:0.8rem}
+    
+    /* Line Chart (SVG) */
+    .chart-container{position:relative;height:200px;width:100%;margin-top:1rem;border-left:1px solid var(--border);border-bottom:1px solid var(--border)}
+    svg{width:100%;height:100%;overflow:visible}
+    .line-target{fill:none;stroke:#ef4444;stroke-width:2;stroke-dasharray:4}
+    .line-plan{fill:none;stroke:#0f766e;stroke-width:3}
+    .dot{fill:#fff;stroke-width:2;r:4}
 
-    .mutebox{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:.65rem .75rem}
-
-    footer{
-      position:fixed;left:0;right:0;bottom:0;
-      background:#fff;border-top:1px solid var(--line);
-      padding:.5rem 1rem;font-size:.82rem;color:var(--sub)
-    }
-    footer .inner{max-width:1100px;margin:0 auto}
-
-    /* print */
-    .print-only{display:none}
+    /* Tables */
+    .tbl{width:100%;border-collapse:collapse;font-size:0.9rem}
+    .tbl th,.tbl td{padding:0.6rem;border-bottom:1px solid var(--border);text-align:right}
+    .tbl th{text-align:left;color:var(--sub)}
+    .tbl tr:last-child td{border-bottom:none}
+    
+    /* Print */
     @media print{
-      header,footer,.noprint{display:none!important}
+      .no-print{display:none}
       body{background:#fff}
-      .wrap{margin:0;padding:0}
-      .card{box-shadow:none;border:1px solid #999}
-      .print-only{display:block}
+      .card{border:1px solid #000;box-shadow:none}
+      .bar-track{border:1px solid #ccc}
     }
   </style>
 </head>
 <body>
-<header>
-  <div class="bar">
-    <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
-      <div class="ttl">収益不動産 取得資金ロードマップ</div>
-      <span class="badge">r2</span>
-      <span class="mini">自己資金積上げ＋ローン返済＋DSCR＋3年PL/CF（概算）</span>
-    </div>
-    <div class="noprint" style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
-      <button class="btn" id="btn-reset">初期化</button>
-      <button class="btn primary" id="btn-print">印刷/PDF</button>
-    </div>
-  </div>
-</header>
 
-<div class="wrap">
-  <div class="grid">
-    <!-- 入力 -->
-    <section class="card">
-      <div class="hd">
-        <strong>入力</strong>
-        <span class="mini">（数値を仮置き→面談で精緻化）</span>
-      </div>
-      <div class="bd">
-        <div class="row">
-          <div>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h1 style="font-size:1.4rem;margin:0">収益不動産 取得資金シミュレーター <span style="font-size:0.9rem;font-weight:normal;color:var(--sub)">r3</span></h1>
+    <button class="chip no-print" onclick="window.print()" style="font-weight:bold">🖨 印刷 / PDF</button>
+  </div>
+
+  <div class="grid-2">
+    
+    <div>
+      <section class="card">
+        <div class="card-hd"><span class="card-ttl">1. 目標設定（物件・融資）</span></div>
+        <div class="card-bd">
+          <div class="input-group">
             <label>物件価格（円）</label>
-            <input id="price" type="text" inputmode="numeric" data-commas placeholder="例：80,000,000">
+            <input id="price" type="text" inputmode="numeric" data-format placeholder="80,000,000">
             <div class="chips">
               <button class="chip" data-set="price" data-val="50000000">5,000万</button>
               <button class="chip" data-set="price" data-val="80000000">8,000万</button>
               <button class="chip" data-set="price" data-val="100000000">1億</button>
-              <button class="chip" data-set="price" data-val="150000000">1.5億</button>
             </div>
           </div>
-
-          <div>
-            <label>取得時期</label>
-            <select id="timemode">
-              <option value="months">あと何か月</option>
-              <option value="ym">年月（YYYY-MM）</option>
-            </select>
-            <div style="margin-top:.45rem">
-              <input id="months" type="text" inputmode="numeric" data-commas placeholder="例：36（=3年）">
-              <input id="ym" type="month" style="display:none">
-              <div class="chips">
-                <button class="chip" data-set="months" data-val="24">24か月</button>
-                <button class="chip" data-set="months" data-val="36">36か月</button>
-                <button class="chip" data-set="months" data-val="48">48か月</button>
-              </div>
-              <div class="mini" id="timehint"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="row">
-          <div>
-            <label>LTV（借入比率 %）</label>
-            <input id="ltv" type="text" inputmode="decimal" placeholder="例：80">
-            <div class="chips">
-              <button class="chip" data-set="ltv" data-val="70">70%</button>
-              <button class="chip" data-set="ltv" data-val="80">80%</button>
-              <button class="chip" data-set="ltv" data-val="90">90%</button>
-            </div>
-            <div class="mini">借入額＝物件価格×LTV（簡易）。諸費用は現金前提で別入力。</div>
-          </div>
-
-          <div>
-            <label>購入諸費用（% + 固定）</label>
-            <div class="row" style="grid-template-columns:1fr 1fr">
-              <div>
-                <input id="costpct" type="text" inputmode="decimal" placeholder="例：8">
-                <div class="mini">物件価格×%</div>
-              </div>
-              <div>
-                <input id="costfix" type="text" inputmode="numeric" data-commas placeholder="例：0">
-                <div class="mini">固定（円）</div>
-              </div>
-            </div>
-            <div class="chips">
-              <button class="chip" data-set="costpct" data-val="6">6%</button>
-              <button class="chip" data-set="costpct" data-val="8">8%</button>
-              <button class="chip" data-set="costpct" data-val="10">10%</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="row">
-          <div>
-            <label>初期修繕・備品等（円）</label>
-            <input id="repair" type="text" inputmode="numeric" data-commas placeholder="例：1,000,000">
-            <div class="chips">
-              <button class="chip" data-set="repair" data-val="0">0</button>
-              <button class="chip" data-set="repair" data-val="500000">50万</button>
-              <button class="chip" data-set="repair" data-val="1000000">100万</button>
-            </div>
-          </div>
-          <div>
-            <label>運転資金バッファ（円）</label>
-            <input id="buffer" type="text" inputmode="numeric" data-commas placeholder="例：2,000,000">
-            <div class="chips">
-              <button class="chip" data-set="buffer" data-val="0">0</button>
-              <button class="chip" data-set="buffer" data-val="1000000">100万</button>
-              <button class="chip" data-set="buffer" data-val="3000000">300万</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="row">
-          <div>
-            <label>現在の自己資金（現金）（円）</label>
-            <input id="cashnow" type="text" inputmode="numeric" data-commas placeholder="例：5,000,000">
-            <div class="mini">※「購入時点の想定自己資金」は、下の3年PL/CF（内部留保）で上積みします。</div>
-          </div>
-          <div>
-            <label>毎月の積立可能額（手入力・任意）（円）</label>
-            <input id="save" type="text" inputmode="numeric" data-commas placeholder="例：200,000">
-            <div class="mini">3年PL/CFが未入力の場合の代替。または比較用。</div>
-          </div>
-        </div>
-
-        <div class="sep"></div>
-
-        <details>
-          <summary style="cursor:pointer;font-weight:900">▶ 返済・収益性（DSCR）設定（任意）</summary>
-          <div style="margin-top:.6rem" class="row">
-            <div>
-              <label>金利（年 %）</label>
-              <input id="rate" type="text" inputmode="decimal" placeholder="例：2.0">
-              <div class="chips">
-                <button class="chip" data-set="rate" data-val="1.5">1.5%</button>
-                <button class="chip" data-set="rate" data-val="2.0">2.0%</button>
-                <button class="chip" data-set="rate" data-val="2.5">2.5%</button>
-              </div>
-            </div>
-            <div>
-              <label>返済期間（年）</label>
-              <input id="term" type="text" inputmode="numeric" data-commas placeholder="例：25">
-              <div class="chips">
-                <button class="chip" data-set="term" data-val="20">20年</button>
-                <button class="chip" data-set="term" data-val="25">25年</button>
-                <button class="chip" data-set="term" data-val="30">30年</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:.6rem">
-            <div>
-              <label>NOI利回り（年 %）</label>
-              <input id="noiy" type="text" inputmode="decimal" placeholder="例：5.0">
-              <div class="mini">NOI（年）＝物件価格×NOI利回り（簡易）。賃料/空室/運営費で精緻化する前提。</div>
-            </div>
-            <div>
-              <label>目標DSCR</label>
-              <input id="dscrT" type="text" inputmode="decimal" placeholder="例：1.20">
-              <div class="mini">DSCR＝NOI（年）÷ 年間元利返済額（概念）。</div>
-            </div>
-          </div>
-        </details>
-
-        <div class="sep"></div>
-
-        <details>
-          <summary style="cursor:pointer;font-weight:900">▶ 3年PL/CF（簡易）</summary>
-          <div class="mini" style="margin-top:.4rem">
-            目的：<b>「税後CF→内部留保（現金）」</b>を仮置きし、購入時点の自己資金を現実的に見積もるため。
-            <br>※会計利益ではなく、<b>現金増減</b>（税後CF）を見る前提です。
-          </div>
-
-          <div class="sep"></div>
 
           <div class="row">
-            <div>
-              <label>実効税率（%）</label>
-              <input id="taxrate" type="text" inputmode="decimal" placeholder="例：30">
+            <div class="input-group">
+              <label>LTV（借入割合 %）</label>
+              <input id="ltv" type="number" value="80">
               <div class="chips">
-                <button class="chip" data-set="taxrate" data-val="25">25%</button>
-                <button class="chip" data-set="taxrate" data-val="30">30%</button>
-                <button class="chip" data-set="taxrate" data-val="35">35%</button>
+                <button class="chip" data-set="ltv" data-val="80">80%</button>
+                <button class="chip" data-set="ltv" data-val="90">90%</button>
               </div>
-              <div class="mini">税額＝max(0, 税引前利益)×実効税率（簡易）。欠損金・税額控除等は未反映。</div>
             </div>
-
-            <div class="mutebox">
-              <div style="font-weight:900;margin-bottom:.25rem">計算式（年）</div>
-              <div class="mini">
-                売上 − 変動費（=売上×変動費率）＝粗利<br>
-                粗利 − 固定費 ＝ EBITDA<br>
-                EBITDA − 減価償却 ＝ 税引前利益（PBT）<br>
-                税引後利益 ＝ PBT − 税額<br>
-                税後CF（内部留保）＝ 税引後利益 + 減価償却 − 設備投資 − 役員借入返済/配当等 − 運転資金増加
+            <div class="input-group">
+              <label>諸費用（概算 %）</label>
+              <input id="costRate" type="number" value="8">
+              <div class="chips">
+                <button class="chip" data-set="costRate" data-val="7">7%</button>
+                <button class="chip" data-set="costRate" data-val="10">10%</button>
               </div>
             </div>
           </div>
 
-          <div class="sep"></div>
-
-          <div class="card" style="box-shadow:none">
-            <div class="hd"><strong>年次入力（3年）</strong><span class="mini">単位：円 / %</span></div>
-            <div class="bd">
-              <table class="tbl">
-                <thead>
-                  <tr>
-                    <th>項目</th>
-                    <th>1年目</th>
-                    <th>2年目</th>
-                    <th>3年目</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th>売上高</th>
-                    <td><input id="s1" type="text" inputmode="numeric" data-commas placeholder="例：50,000,000"></td>
-                    <td><input id="s2" type="text" inputmode="numeric" data-commas placeholder="例：65,000,000"></td>
-                    <td><input id="s3" type="text" inputmode="numeric" data-commas placeholder="例：80,000,000"></td>
-                  </tr>
-                  <tr>
-                    <th>変動費率（%）</th>
-                    <td><input id="vr1" type="text" inputmode="decimal" placeholder="例：20"></td>
-                    <td><input id="vr2" type="text" inputmode="decimal" placeholder="例：20"></td>
-                    <td><input id="vr3" type="text" inputmode="decimal" placeholder="例：20"></td>
-                  </tr>
-                  <tr>
-                    <th>固定費（人件費/家賃/販管費等）</th>
-                    <td><input id="f1" type="text" inputmode="numeric" data-commas placeholder="例：32,000,000"></td>
-                    <td><input id="f2" type="text" inputmode="numeric" data-commas placeholder="例：40,000,000"></td>
-                    <td><input id="f3" type="text" inputmode="numeric" data-commas placeholder="例：48,000,000"></td>
-                  </tr>
-                  <tr>
-                    <th>減価償却費（非資金）</th>
-                    <td><input id="d1" type="text" inputmode="numeric" data-commas placeholder="例：500,000"></td>
-                    <td><input id="d2" type="text" inputmode="numeric" data-commas placeholder="例：500,000"></td>
-                    <td><input id="d3" type="text" inputmode="numeric" data-commas placeholder="例：500,000"></td>
-                  </tr>
-                  <tr>
-                    <th>設備投資（資金支出）</th>
-                    <td><input id="cap1" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                    <td><input id="cap2" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                    <td><input id="cap3" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                  </tr>
-                  <tr>
-                    <th>社外流出（配当/役員借入返済等）</th>
-                    <td><input id="out1" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                    <td><input id="out2" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                    <td><input id="out3" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                  </tr>
-                  <tr>
-                    <th>運転資金増減（増加=マイナス）</th>
-                    <td><input id="wc1" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                    <td><input id="wc2" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                    <td><input id="wc3" type="text" inputmode="numeric" data-commas placeholder="例：0"></td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div class="mini" style="margin-top:.6rem">
-                使い方の目安：<br>
-                ・仲介のみの場合は、売上（仲介手数料等）に対し、広告費・外注費・紹介料などを「変動費」に寄せると粗利が見えます。<br>
-                ・固定費は「人件費・家賃・通信・車両・システム等」をまとめてOK（精緻化は後で）。
-              </div>
+          <div class="input-group">
+            <label>取得時期（何か月後）</label>
+            <input id="months" type="number" value="36">
+            <div style="font-size:0.8rem;color:var(--sub);margin-top:4px">
+              目標：<span id="targetDate"></span>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div class="sep"></div>
-
-          <div class="note blue" id="planhint">
-            3年PL/CFのいずれかの年で「売上高」を入れると、計画ベースの内部留保を使って購入時点の自己資金を試算します。
+      <section class="card" style="margin-top:1.5rem">
+        <div class="card-hd">
+          <span class="card-ttl">2. 財務体力（現在と未来）</span>
+          <small style="color:var(--sub)">※TKC巡回監査による計画値</small>
+        </div>
+        <div class="card-bd">
+          <div class="input-group">
+            <label>現在の自己資金（円）</label>
+            <input id="cashNow" type="text" inputmode="numeric" data-format placeholder="5,000,000">
           </div>
 
-          <div class="sep"></div>
-
-          <div class="card" style="box-shadow:none">
-            <div class="hd"><strong>3年PL/CF（計算結果）</strong><span class="mini">概算</span></div>
-            <div class="bd">
-              <table class="tbl">
-                <thead>
-                  <tr>
-                    <th>指標</th>
-                    <th>1年目</th>
-                    <th>2年目</th>
-                    <th>3年目</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><th>粗利</th><td id="gp1">—</td><td id="gp2">—</td><td id="gp3">—</td></tr>
-                  <tr><th>EBITDA</th><td id="eb1">—</td><td id="eb2">—</td><td id="eb3">—</td></tr>
-                  <tr><th>税引前利益（PBT）</th><td id="pbt1">—</td><td id="pbt2">—</td><td id="pbt3">—</td></tr>
-                  <tr><th>税額（簡易）</th><td id="tx1">—</td><td id="tx2">—</td><td id="tx3">—</td></tr>
-                  <tr><th>税引後利益</th><td id="np1">—</td><td id="np2">—</td><td id="np3">—</td></tr>
-                  <tr><th style="font-weight:900">税後CF（内部留保）</th><td id="fc1" style="font-weight:900">—</td><td id="fc2" style="font-weight:900">—</td><td id="fc3" style="font-weight:900">—</td></tr>
-                  <tr><th>期末現金（開始現金＋累計CF）</th><td id="ec1">—</td><td id="ec2">—</td><td id="ec3">—</td></tr>
-                </tbody>
-              </table>
-
-              <div class="sep"></div>
-
-              <div class="kpi">
-                <span class="pill">購入時点の想定自己資金（計画ベース） <b id="cashAtBuy">¥0</b></span>
-                <span class="pill">平均の積立余力（計画ベース/月） <b id="planPM">¥0</b></span>
-              </div>
-
-              <div class="mini" style="margin-top:.5rem">
-                ※購入時点が12か月単位でない場合、当該年の税後CFを月割りして按分しています（簡易）。
+          <div style="background:#f8fafc;padding:1rem;border-radius:8px;border:1px dashed var(--border)">
+            <label style="color:#0f766e">今後3年間の内部留保（年間 平均）</label>
+            <div class="row">
+              <div class="input-group" style="margin-bottom:0">
+                <input id="profitYear" type="text" inputmode="numeric" data-format placeholder="例：2,000,000">
               </div>
             </div>
+            <div style="font-size:0.8rem;color:var(--sub);margin-top:0.5rem;line-height:1.4">
+              ※税引後利益＋減価償却費－返済(約定)－生活費等の実質手残り。<br>
+              <strong>「この額を毎年貯める」</strong>という計画値を入力。
+            </div>
           </div>
+          
+          <div class="chips" style="margin-top:1rem">
+             <span style="font-size:0.8rem;color:var(--sub)">簡易入力：</span>
+             <button class="chip" data-set="profitYear" data-val="1000000">年100万</button>
+             <button class="chip" data-set="profitYear" data-val="3000000">年300万</button>
+             <button class="chip" data-set="profitYear" data-val="5000000">年500万</button>
+          </div>
+        </div>
+      </section>
+    </div>
 
-        </details>
+    <div>
+      <div id="statusBox" class="status-box ng">
+        <span class="status-icon" id="statusIcon">⚠️</span>
+        <div class="status-main" id="statusText">判定不能</div>
+        <div class="status-sub" id="statusSub">数値を入力してください</div>
       </div>
-    </section>
 
-    <!-- 結果 -->
-    <section class="card">
-      <div class="hd">
-        <strong>結果（概算）</strong>
-        <span class="mini">必要自己資金と、購入時点の現金（計画/手入力）</span>
-      </div>
-      <div class="bd">
-        <div class="kpi">
-          <span class="pill">借入額（概算） <b id="loan">¥0</b></span>
-          <span class="pill">諸費用（概算） <b id="costs">¥0</b></span>
-          <span class="pill">予備費（修繕+バッファ） <b id="resv">¥0</b></span>
-        </div>
+      <section class="card">
+        <div class="card-hd"><span class="card-ttl">資金調達構成チャート</span></div>
+        <div class="card-bd">
+          
+          <div class="bar-chart-wrap">
+            <div class="bar-label">
+              <span>必要総額</span>
+              <span id="labelTotal">¥0</span>
+            </div>
+            <div class="bar-track" style="margin-bottom:1rem;background:#e2e8f0">
+               <div style="width:100%;background:#64748b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem">
+                 必要資金総額 (100%)
+               </div>
+            </div>
 
-        <div class="sep"></div>
-
-        <div class="kpi">
-          <span class="pill">購入時に必要な自己資金 <b id="need">¥0</b></span>
-          <span class="pill">現在の自己資金（現金） <b id="now">¥0</b></span>
-          <span class="pill">購入時点の想定自己資金（計画） <b id="nowPlan">¥0</b></span>
-          <span class="pill">購入時点の想定自己資金（手入力） <b id="nowManual">¥0</b></span>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="kpi">
-          <span class="pill">目標期日まで（月数） <b id="mleft">0</b> か月</span>
-          <span class="pill">不足額（計画ベース） <b id="gapPlan">¥0</b></span>
-          <span class="pill">不足額（手入力ベース） <b id="gapManual">¥0</b></span>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="kpi">
-          <span class="pill">必要な月次積立（計画ベース） <b id="needpmPlan">¥0</b></span>
-          <span class="pill">必要な月次積立（手入力ベース） <b id="needpmManual">¥0</b></span>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="note" id="msg">
-          数値を入れると、ここに要点が出ます。
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="card" style="box-shadow:none">
-          <div class="hd"><strong>内訳（必要自己資金）</strong><span class="mini">※簡易：物件価格＋諸費用＋予備費−借入</span></div>
-          <div class="bd">
-            <table class="tbl">
-              <tbody>
-                <tr><th>物件価格</th><td id="b_price">¥0</td></tr>
-                <tr><th>＋ 諸費用</th><td id="b_cost">¥0</td></tr>
-                <tr><th>＋ 予備費（修繕+バッファ）</th><td id="b_resv">¥0</td></tr>
-                <tr><th>− 借入額（概算）</th><td id="b_loan">¥0</td></tr>
-                <tr><th style="font-weight:900">＝ 必要自己資金</th><td id="b_need" style="font-weight:900">¥0</td></tr>
-              </tbody>
-            </table>
-            <div class="mini" style="margin-top:.5rem">
-              注：建物消費税・評価・融資手数料等でブレます。面談で「対象物件の想定（築年/構造/利回り/空室/修繕計画）」を置いて精緻化してください。
+            <div class="bar-label">
+              <span>準備状況（内訳）</span>
+              <span id="labelPrep">¥0</span>
+            </div>
+            <div class="bar-track" id="barTrack">
+              <div id="segLoan" class="bar-seg bs-loan" style="width:0%">借入</div>
+              <div id="segNow" class="bar-seg bs-now" style="width:0%">自己資金</div>
+              <div id="segFut" class="bar-seg bs-fut" style="width:0%">積立</div>
+              <div id="segGap" class="bar-seg bs-gap" style="width:0%"></div>
+            </div>
+            
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.75rem;margin-top:0.5rem;color:var(--sub)">
+              <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#94a3b8;border-radius:2px"></span>借入可能額</div>
+              <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#0f766e;border-radius:2px"></span>現在資金</div>
+              <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#2dd4bf;border-radius:2px"></span>将来積立(計画)</div>
+              <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px"></span>不足</div>
             </div>
           </div>
-        </div>
 
-        <div class="sep"></div>
-
-        <details>
-          <summary style="cursor:pointer;font-weight:900">▶ DSCR（概算）</summary>
-          <div style="margin-top:.6rem">
-            <div class="kpi">
-              <span class="pill">月返済（元利均等） <b id="pmt">¥0</b></span>
-              <span class="pill">年間返済 <b id="ads">¥0</b></span>
-              <span class="pill">NOI（年） <b id="noi">¥0</b></span>
-              <span class="pill">DSCR <b id="dscr">—</b></span>
+          <div style="margin-top:2rem">
+            <div class="card-ttl" style="font-size:0.95rem">自己資金の推移シミュレーション</div>
+            <div class="chart-container">
+              <svg id="lineChart" viewBox="0 0 300 200" preserveAspectRatio="none">
+                </svg>
+              <div style="position:absolute;bottom:-20px;left:0;font-size:0.7rem;color:var(--sub)">現在</div>
+              <div style="position:absolute;bottom:-20px;right:0;font-size:0.7rem;color:var(--sub)" id="labelEndParams">3年後</div>
+              <div style="position:absolute;top:0;right:5px;font-size:0.7rem;color:#ef4444;font-weight:bold">必要額</div>
             </div>
-            <div class="sep"></div>
-            <div class="mini">目標DSCRを満たすための必要NOI利回り（概算）：<b id="reqy">—</b></div>
+             <div style="font-size:0.8rem;text-align:right;color:var(--sub);margin-top:1.5rem">
+               緑の実線が目標額（赤点線）に届かなければ購入不可
+             </div>
           </div>
-        </details>
 
-        <div class="sep"></div>
-
-        <button class="btn" id="btn-copy">要点をコピー</button>
-        <div class="print-only" style="margin-top:.8rem">
-          <div class="mini">（印刷用）作成日：<span id="printdate"></span></div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section class="card" style="margin-top:1.5rem">
+        <div class="card-hd"><span class="card-ttl">詳細数値（概算）</span></div>
+        <div class="card-bd">
+          <table class="tbl">
+            <tr><th>物件価格</th><td id="valPrice">¥0</td></tr>
+            <tr><th>＋ 諸費用</th><td id="valCost">¥0</td></tr>
+            <tr style="background:#f8fafc"><th>＝ 必要総額</th><td id="valTotal" style="font-weight:bold">¥0</td></tr>
+            <tr><th>－ 借入可能額 (LTV)</th><td id="valLoan">▲ ¥0</td></tr>
+            <tr><th>－ 現在の自己資金</th><td id="valNow">▲ ¥0</td></tr>
+            <tr><th>－ 将来の積立 (×月数)</th><td id="valFut">▲ ¥0</td></tr>
+            <tr style="border-top:2px solid var(--border)">
+              <th style="color:var(--text);font-weight:900">判定結果（不足額）</th>
+              <td id="valGap" style="font-weight:900;font-size:1.1rem">¥0</td>
+            </tr>
+          </table>
+        </div>
+      </section>
+
+    </div>
   </div>
 </div>
 
-<footer class="noprint">
-  <div class="inner">© <span id="y"></span> 税理士法人松本会計事務所｜取得資金ロードマップ r2（概算）</div>
-</footer>
-
 <script>
-  const LSKEY = 'mk_prop_roadmap_r2';
+// Logic
+const el = id => document.getElementById(id);
+const fmt = n => isNaN(n) ? "0" : n.toLocaleString('ja-JP');
+const yen = n => "¥" + fmt(Math.round(n));
+const parse = v => {
+  if(!v) return 0;
+  return parseFloat(String(v).replace(/,/g, '')) || 0;
+}
 
-  const el = (id)=>document.getElementById(id);
-  const fmt = (n)=> (isNaN(n)?0:n).toLocaleString('ja-JP');
-  const yen = (n)=> '¥' + fmt(Math.round(n||0));
+// Inputs
+const inputs = ['price','ltv','costRate','months','cashNow','profitYear'];
 
-  function parseNum(v){
-    const s = String(v??'').replace(/,/g,'').trim();
-    if(s==='' || s==='-') return NaN;
-    const n = parseFloat(s.replace(/[^0-9.\-]/g,''));
-    return isNaN(n)?NaN:n;
-  }
-  function num0(v){ const n=parseNum(v); return isNaN(n)?0:n; }
-  function pct0(v){ const n=parseFloat(String(v??'').trim()); return isNaN(n)?0:n; }
-
-  function bindCommaInput(inp){
-    const handler = ()=>{
-      const raw = String(inp.value||'').replace(/,/g,'').trim();
-      if(raw==='' || raw==='-'){ save(); recalc(); return; }
-      const n = num0(raw);
-      inp.value = fmt(n);
-      save(); recalc();
-    };
-    inp.addEventListener('input', handler);
-    inp.addEventListener('blur', handler);
-  }
-
-  function monthsBetween(now, target){
-    return (target.getFullYear()-now.getFullYear())*12 + (target.getMonth()-now.getMonth());
-  }
-
-  function amortPayment(P, annualRatePct, years){
-    const r = (annualRatePct/100)/12;
-    const n = Math.max(1, Math.round(years*12));
-    if(P<=0) return 0;
-    if(r===0) return P/n;
-    const pow = Math.pow(1+r, n);
-    return P * r * pow / (pow-1);
-  }
-
-  function setTimeMode(){
-    const mode = el('timemode').value;
-    el('months').style.display = (mode==='months') ? 'block':'none';
-    el('ym').style.display = (mode==='ym') ? 'block':'none';
-    save(); recalc();
-  }
-
-  function getMonthsLeft(){
-    const mode = el('timemode').value;
-    if(mode==='months'){
-      return Math.max(0, Math.round(num0(el('months').value)));
-    } else {
-      const ym = el('ym').value; // "YYYY-MM"
-      if(!ym) return 0;
-      const [Y,M] = ym.split('-').map(x=>parseInt(x,10));
-      const target = new Date(Y, M-1, 1);
-      const now = new Date();
-      const m = monthsBetween(new Date(now.getFullYear(), now.getMonth(), 1), target);
-      return Math.max(0, m);
+// Event Listeners
+inputs.forEach(id => {
+  const dom = el(id);
+  dom.addEventListener('input', update);
+  dom.addEventListener('blur', () => {
+    // Format on blur if it's a number field
+    if(dom.dataset.format !== undefined) {
+      dom.value = fmt(parse(dom.value));
     }
+  });
+});
+
+// Chips
+document.querySelectorAll('.chip[data-set]').forEach(btn => {
+  btn.addEventListener('click', e => {
+    const id = btn.dataset.set;
+    const val = btn.dataset.val;
+    const dom = el(id);
+    dom.value = dom.dataset.format !== undefined ? fmt(Number(val)) : val;
+    update();
+  });
+});
+
+// Main Update Function
+function update() {
+  // 1. Get Values
+  const price = parse(el('price').value);
+  const ltv = parse(el('ltv').value);
+  const costRate = parse(el('costRate').value);
+  const months = parse(el('months').value);
+  const cashNow = parse(el('cashNow').value);
+  const profitYear = parse(el('profitYear').value);
+
+  // 2. Calc Basics
+  const costs = price * (costRate / 100);
+  const totalNeeded = price + costs;
+  
+  const loan = price * (ltv / 100);
+  const ownFundsNeeded = totalNeeded - loan; // 純粋に現金で用意すべき額
+  
+  // Future Accumulation
+  const profitMonth = profitYear / 12;
+  const futureCash = profitMonth * months;
+  const totalPrepared = cashNow + futureCash;
+  
+  const totalReadyFunds = loan + totalPrepared;
+  const gap = totalNeeded - totalReadyFunds; // Positive means Shortfall
+
+  // 3. Update Dashboard
+  const statusBox = el('statusBox');
+  const statusIcon = el('statusIcon');
+  const statusText = el('statusText');
+  const statusSub = el('statusSub');
+
+  if(price === 0) {
+    statusBox.className = "status-box";
+    statusIcon.innerText = "🔢";
+    statusText.innerText = "数値入力待ち";
+    statusSub.innerText = "左側の項目を入力してください";
+  } else if(gap <= 0) {
+    statusBox.className = "status-box ok";
+    statusIcon.innerText = "✅";
+    statusText.innerText = "購入可能圏内";
+    statusSub.innerText = `素晴らしい計画です。資金余力：${yen(Math.abs(gap))}`;
+  } else {
+    statusBox.className = "status-box ng";
+    statusIcon.innerText = "⚠️";
+    statusText.innerText = `資金不足：${yen(gap)}`;
+    statusSub.innerText = `今のペースでは足りません。月額あと ${yen(gap/months)} の積立上乗せが必要です。`;
   }
 
-  function planInputs(){
-    const taxrate = Math.min(60, Math.max(0, pct0(el('taxrate').value)));
-    const s = [num0(el('s1').value), num0(el('s2').value), num0(el('s3').value)];
-    const vr = [pct0(el('vr1').value), pct0(el('vr2').value), pct0(el('vr3').value)];
-    const f = [num0(el('f1').value), num0(el('f2').value), num0(el('f3').value)];
-    const d = [num0(el('d1').value), num0(el('d2').value), num0(el('d3').value)];
-    const cap = [num0(el('cap1').value), num0(el('cap2').value), num0(el('cap3').value)];
-    const out = [num0(el('out1').value), num0(el('out2').value), num0(el('out3').value)];
-    const wc = [num0(el('wc1').value), num0(el('wc2').value), num0(el('wc3').value)];
-    return {taxrate, s, vr, f, d, cap, out, wc};
-  }
+  // 4. Update Bar Chart (Stacked)
+  // Base is totalNeeded. If totalReadyFunds > totalNeeded, we scale down or clip?
+  // Let's make the width based on Max(totalNeeded, totalReadyFunds) to avoid overflow
+  const maxScale = Math.max(totalNeeded, totalReadyFunds) || 1;
+  
+  const pctLoan = (loan / maxScale) * 100;
+  const pctNow = (cashNow / maxScale) * 100;
+  const pctFut = (futureCash / maxScale) * 100;
+  const pctGap = (gap > 0) ? (gap / maxScale) * 100 : 0;
 
-  function calcPlan(){
-    const {taxrate, s, vr, f, d, cap, out, wc} = planInputs();
+  el('labelTotal').innerText = yen(totalNeeded);
+  el('labelPrep').innerText = yen(totalReadyFunds);
 
-    // 売上が1つも入っていなければ「未入力」扱い
-    const anySales = s.some(x => x > 0);
-    const cash0 = num0(el('cashnow').value);
+  el('segLoan').style.width = pctLoan + "%";
+  el('segLoan').innerText = pctLoan > 15 ? `借入 ${yen(loan)}` : "";
 
-    const years = [];
-    let cashEnd = cash0;
+  el('segNow').style.width = pctNow + "%";
+  el('segNow').innerText = pctNow > 10 ? `現 ${yen(cashNow)}` : "";
 
-    for(let i=0;i<3;i++){
-      const sales = s[i];
-      const vratio = Math.min(99.9, Math.max(0, vr[i]))/100;
-      const varCost = sales * vratio;
-      const gp = sales - varCost;
-      const ebitda = gp - f[i];
-      const pbt = ebitda - d[i]; // 税引前利益（簡易）
-      const tax = Math.max(0, pbt) * (taxrate/100);
-      const np = pbt - tax;
-      const fcf = np + d[i] - cap[i] - out[i] - wc[i]; // 税後CF（内部留保）
-      cashEnd = cashEnd + fcf;
+  el('segFut').style.width = pctFut + "%";
+  el('segFut').innerText = pctFut > 10 ? `積 ${yen(futureCash)}` : "";
 
-      years.push({
-        sales, vratio, varCost, gp, ebitda, pbt, tax, np, fcf,
-        endCash: cashEnd
-      });
-    }
+  el('segGap').style.width = pctGap + "%";
+  // gap text handled by css pseudo element or empty
 
-    // 購入時点（mleft）までの内部留保の按分（簡易：年の税後CFを月割）
-    const mleft = getMonthsLeft();
-    let remaining = mleft;
-    let add = 0; // 購入までに増える現金（税後CF按分合計）
-    for(let i=0;i<3;i++){
-      if(remaining<=0) break;
-      const take = Math.min(12, remaining);
-      add += (years[i].fcf || 0) * (take/12);
-      remaining -= take;
-    }
-    const cashAtBuy = cash0 + add;
-    const planPM = (mleft>0) ? (add / mleft) : 0;
+  // 5. Update Line Chart (SVG)
+  // X axis: 0 to months
+  // Y axis: 0 to ownFundsNeeded (Target)
+  // Line 1 (Target): Horizontal dashed line at ownFundsNeeded? No, we need total capital available vs needed cash portion?
+  // Let's track "Cash Available" vs "Cash Needed".
+  // Cash Needed = Total Cost - Loan. This is static target.
+  
+  const svg = el('lineChart');
+  const w = 300; 
+  const h = 200;
+  const pad = 20;
+  
+  // Y-Scale Max
+  const maxY = Math.max(ownFundsNeeded, totalPrepared * 1.2, 100000); 
+  
+  const getY = val => h - ((val / maxY) * h);
+  const getX = m => (m / months) * w;
 
-    return {anySales, years, cashAtBuy, planPM, cash0, taxrate};
-  }
+  // Target Line (Need Cash)
+  const targetY = getY(ownFundsNeeded);
+  // Path: (0, targetY) -> (w, targetY)
+  const pathTarget = `<line x1="0" y1="${targetY}" x2="${w}" y2="${targetY}" class="line-target" stroke="#ef4444" stroke-dasharray="4"/>`;
+  
+  // Accumulation Line
+  // Start: cashNow
+  // End: totalPrepared
+  const startY = getY(cashNow);
+  const endY = getY(totalPrepared);
+  const pathPlan = `<polyline points="0,${startY} ${w},${endY}" class="line-plan" stroke="#0f766e" fill="none" stroke-width="3"/>`;
+  
+  // End Dot
+  const dotPlan = `<circle cx="${w}" cy="${endY}" class="dot" fill="${gap<=0?'#15803d':'#ef4444'}" stroke="#fff"/>`;
 
-  function recalc(){
-    const price = num0(el('price').value);
-    const ltv = Math.min(100, Math.max(0, pct0(el('ltv').value)));
-    const costpct = Math.min(50, Math.max(0, pct0(el('costpct').value)));
-    const costfix = num0(el('costfix').value);
-    const repair = num0(el('repair').value);
-    const buffer = num0(el('buffer').value);
-    const cashnow = num0(el('cashnow').value);
-    const savepm = num0(el('save').value);
+  svg.innerHTML = pathTarget + pathPlan + dotPlan;
 
-    const mleft = getMonthsLeft();
-    const timehint = el('timehint');
-    if(el('timemode').value==='months'){
-      const now = new Date();
-      const target = new Date(now.getFullYear(), now.getMonth()+mleft, 1);
-      timehint.textContent = mleft>0 ? `目安：${target.getFullYear()}年${target.getMonth()+1}月` : '※月数が0だと「今すぐ」の扱いになります';
-    } else {
-      timehint.textContent = (el('ym').value) ? `あと ${mleft} か月` : '※年月を選択してください';
-    }
+  // 6. Update Table
+  el('valPrice').innerText = yen(price);
+  el('valCost').innerText = yen(costs);
+  el('valTotal').innerText = yen(totalNeeded);
+  el('valLoan').innerText = "▲ " + yen(loan);
+  el('valNow').innerText = "▲ " + yen(cashNow);
+  el('valFut').innerText = "▲ " + yen(futureCash);
+  el('valGap').innerText = yen(gap);
+  el('valGap').style.color = gap > 0 ? "var(--danger)" : "var(--ok)";
+  
+  // Date target
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  el('targetDate').innerText = `${d.getFullYear()}年${d.getMonth()+1}月 頃`;
+}
 
-    const loan = price * (ltv/100);
-    const costs = price * (costpct/100) + costfix;
-    const resv = repair + buffer;
-
-    let need = price + costs + resv - loan;
-    if(need < 0) need = 0;
-
-    // 計画ベース
-    const plan = calcPlan();
-    const cashAtBuyPlan = plan.anySales ? plan.cashAtBuy : cashnow; // 未入力なら現状のみ
-    const gapPlan = Math.max(0, need - cashAtBuyPlan);
-    const needpmPlan = (mleft>0) ? (gapPlan / mleft) : (gapPlan>0 ? gapPlan : 0);
-
-    // 手入力ベース（現金 + 毎月積立×月数）
-    const cashAtBuyManual = cashnow + (mleft>0 ? savepm * mleft : 0);
-    const gapManual = Math.max(0, need - cashAtBuyManual);
-    const needpmManual = (mleft>0) ? (gapManual / mleft) : (gapManual>0 ? gapManual : 0);
-
-    // UI（上段）
-    el('loan').textContent = yen(loan);
-    el('costs').textContent = yen(costs);
-    el('resv').textContent = yen(resv);
-
-    el('need').textContent = yen(need);
-    el('now').textContent = yen(cashnow);
-    el('nowPlan').textContent = yen(cashAtBuyPlan);
-    el('nowManual').textContent = yen(cashAtBuyManual);
-
-    el('mleft').textContent = String(mleft);
-    el('gapPlan').textContent = yen(gapPlan);
-    el('gapManual').textContent = yen(gapManual);
-
-    el('needpmPlan').textContent = yen(needpmPlan);
-    el('needpmManual').textContent = yen(needpmManual);
-
-    // 内訳
-    el('b_price').textContent = yen(price);
-    el('b_cost').textContent = yen(costs);
-    el('b_resv').textContent = yen(resv);
-    el('b_loan').textContent = yen(loan);
-    el('b_need').textContent = yen(need);
-
-    // PL/CF表示
-    const y = plan.years || [];
-    const showCell = (id, val)=>{
-      el(id).textContent = (val===null || val===undefined) ? '—' : yen(val);
-    };
-    const showCellRaw = (id, val)=>{
-      el(id).textContent = (val===null || val===undefined) ? '—' : (isFinite(val) ? val.toFixed(2) : '—');
-    };
-
-    if(plan.anySales){
-      showCell('gp1', y[0].gp); showCell('gp2', y[1].gp); showCell('gp3', y[2].gp);
-      showCell('eb1', y[0].ebitda); showCell('eb2', y[1].ebitda); showCell('eb3', y[2].ebitda);
-      showCell('pbt1', y[0].pbt); showCell('pbt2', y[1].pbt); showCell('pbt3', y[2].pbt);
-      showCell('tx1', y[0].tax); showCell('tx2', y[1].tax); showCell('tx3', y[2].tax);
-      showCell('np1', y[0].np); showCell('np2', y[1].np); showCell('np3', y[2].np);
-      showCell('fc1', y[0].fcf); showCell('fc2', y[1].fcf); showCell('fc3', y[2].fcf);
-      showCell('ec1', y[0].endCash); showCell('ec2', y[1].endCash); showCell('ec3', y[2].endCash);
-
-      el('cashAtBuy').textContent = yen(plan.cashAtBuy);
-      el('planPM').textContent = yen(plan.planPM);
-      el('planhint').innerHTML = `計画ベースで購入時点の想定自己資金は <b>${yen(plan.cashAtBuy)}</b>（平均の積立余力：月 <b>${yen(plan.planPM)}</b>）。`;
-    }else{
-      ['gp1','gp2','gp3','eb1','eb2','eb3','pbt1','pbt2','pbt3','tx1','tx2','tx3','np1','np2','np3','fc1','fc2','fc3','ec1','ec2','ec3']
-        .forEach(id => el(id).textContent='—');
-      el('cashAtBuy').textContent = yen(cashnow);
-      el('planPM').textContent = yen(0);
-      el('planhint').textContent = '3年PL/CFのいずれかの年で「売上高」を入れると、計画ベースの内部留保を使って購入時点の自己資金を試算します。';
-    }
-
-    // 要点メッセージ
-    const msg = el('msg');
-    if(price<=0){
-      msg.textContent='まず「物件価格」を入れてください。';
-      return;
-    }
-    const parts = [];
-
-    // 計画ベースの評価（優先）
-    if(plan.anySales){
-      if(mleft<=0 && gapPlan>0){
-        parts.push(`【計画ベース】取得時期が0か月扱いです。不足 ${yen(gapPlan)} を一括で用意する前提になります。`);
-      }else if(gapPlan===0){
-        parts.push(`【計画ベース】購入時点の現金が必要自己資金を満たす見込みです（概算）。次は融資条件とDSCRの確認へ。`);
-      }else{
-        parts.push(`【計画ベース】不足は ${yen(gapPlan)}。残り ${mleft} か月なら、追加で必要な積立は月 ${yen(needpmPlan)}。`);
-      }
-      parts.push(`【計画ベース】購入時点の想定自己資金：${yen(cashAtBuyPlan)}（現在${yen(cashnow)}＋内部留保増加分）。`);
-    }else{
-      parts.push(`3年PL/CFが未入力のため、手入力の「毎月積立」で暫定試算しています。`);
-    }
-
-    // 手入力との比較（任意）
-    if(savepm>0){
-      if(gapManual===0){
-        parts.push(`【手入力】月 ${yen(savepm)} で積むと、購入時点の現金は ${yen(cashAtBuyManual)}（不足なしの想定）。`);
-      }else{
-        const monthsTo = savepm>0 ? Math.ceil((Math.max(0, need - cashnow)) / savepm) : 0;
-        if(monthsTo>0){
-          const now = new Date();
-          const target = new Date(now.getFullYear(), now.getMonth()+monthsTo, 1);
-          parts.push(`【手入力】月 ${yen(savepm)} なら、必要自己資金の到達目安は ${target.getFullYear()}年${target.getMonth()+1}月（約${monthsTo}か月）。`);
-        }
-        parts.push(`【手入力】購入時点の不足：${yen(gapManual)}（必要追加積立：月 ${yen(needpmManual)}）。`);
-      }
-    }
-
-    msg.innerHTML = parts.map(x=>`• ${x}`).join('<br>');
-
-    // DSCR
-    const rate = pct0(el('rate').value);
-    const term = Math.max(1, num0(el('term').value));
-    const noiy = pct0(el('noiy').value);
-    const dscrT = Math.max(0.1, pct0(el('dscrT').value) || 1.2);
-
-    const pmt = amortPayment(loan, rate, term);
-    const ads = pmt * 12;
-    const noi = price * (noiy/100);
-    const dscr = (ads>0) ? (noi / ads) : 0;
-    const reqy = (price>0) ? ((ads * dscrT) / price) * 100 : 0;
-
-    el('pmt').textContent = yen(pmt);
-    el('ads').textContent = yen(ads);
-    el('noi').textContent = yen(noi);
-    el('dscr').textContent = (ads>0 && noiy>0) ? dscr.toFixed(2) : '—';
-    el('reqy').textContent = (ads>0) ? `${reqy.toFixed(2)}%` : '—';
-
-    const ds = el('dscr');
-    ds.classList.remove('good','warn','bad');
-    if(ads>0 && noiy>0){
-      if(dscr >= dscrT) ds.classList.add('good');
-      else if(dscr >= (dscrT*0.9)) ds.classList.add('warn');
-      else ds.classList.add('bad');
-    }
-  }
-
-  function save(){
-    const ids = [
-      'price','timemode','months','ym','ltv','costpct','costfix','repair','buffer','cashnow','save',
-      'rate','term','noiy','dscrT',
-      'taxrate',
-      's1','s2','s3','vr1','vr2','vr3','f1','f2','f3','d1','d2','d3','cap1','cap2','cap3','out1','out2','out3','wc1','wc2','wc3'
-    ];
-    const data = {};
-    ids.forEach(k=>{ if(el(k)) data[k]=el(k).value; });
-    localStorage.setItem(LSKEY, JSON.stringify(data));
-  }
-
-  function load(){
-    try{
-      const raw = localStorage.getItem(LSKEY);
-      if(!raw) return;
-      const d = JSON.parse(raw);
-      for(const k in d){
-        if(el(k)) el(k).value = d[k];
-      }
-    }catch(e){}
-  }
-
-  function attachChips(){
-    document.querySelectorAll('.chip').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const id = btn.dataset.set;
-        const v = btn.dataset.val;
-        if(!el(id)) return;
-        el(id).value = String(v);
-        if(el(id).hasAttribute('data-commas')) el(id).value = fmt(num0(el(id).value));
-        save(); recalc();
-      });
-    });
-  }
-
-  function wireInputs(){
-    // commas
-    [
-      'price','costfix','repair','buffer','cashnow','save','months','term',
-      's1','s2','s3','f1','f2','f3','d1','d2','d3','cap1','cap2','cap3','out1','out2','out3','wc1','wc2','wc3'
-    ].forEach(id=>{ if(el(id)) bindCommaInput(el(id)); });
-
-    // decimals / others
-    [
-      'ltv','costpct','rate','noiy','dscrT',
-      'taxrate','vr1','vr2','vr3'
-    ].forEach(id=>{
-      if(!el(id)) return;
-      el(id).addEventListener('input', ()=>{ save(); recalc(); });
-      el(id).addEventListener('blur', ()=>{ save(); recalc(); });
-    });
-
-    // year inputs that are commas already covered; still want recalcs when typing quickly
-    [
-      's1','s2','s3','f1','f2','f3','d1','d2','d3','cap1','cap2','cap3','out1','out2','out3','wc1','wc2','wc3'
-    ].forEach(id=>{
-      if(!el(id)) return;
-      el(id).addEventListener('input', ()=>{ save(); recalc(); });
-      el(id).addEventListener('blur', ()=>{ save(); recalc(); });
-    });
-
-    el('ym').addEventListener('change', ()=>{ save(); recalc(); });
-    el('timemode').addEventListener('change', setTimeMode);
-  }
-
-  function init(){
-    el('y').textContent = String(new Date().getFullYear());
-    el('printdate').textContent = new Date().toISOString().slice(0,10);
-
-    el('btn-print').addEventListener('click', ()=>window.print());
-    el('btn-reset').addEventListener('click', ()=>{
-      if(confirm('入力を初期化します。よろしいですか？')){
-        localStorage.removeItem(LSKEY);
-        location.reload();
-      }
-    });
-
-    el('btn-copy').addEventListener('click', async ()=>{
-      const plan = calcPlan();
-      const text = [
-        '【収益不動産 取得資金ロードマップ（概算）】',
-        `物件価格：${el('b_price').textContent}`,
-        `借入額（概算）：${el('loan').textContent}`,
-        `諸費用（概算）：${el('costs').textContent}`,
-        `予備費：${el('resv').textContent}`,
-        `必要自己資金：${el('need').textContent}`,
-        `現在自己資金：${el('now').textContent}`,
-        `購入まで：${el('mleft').textContent} か月`,
-        `購入時点の想定自己資金（計画）：${el('nowPlan').textContent}`,
-        `不足額（計画）：${el('gapPlan').textContent}`,
-        `必要積立/月（計画）：${el('needpmPlan').textContent}`,
-        `購入時点の想定自己資金（手入力）：${el('nowManual').textContent}`,
-        `不足額（手入力）：${el('gapManual').textContent}`,
-        `必要積立/月（手入力）：${el('needpmManual').textContent}`,
-        (el('dscr').textContent !== '—') ? `DSCR（概算）：${el('dscr').textContent}（必要NOI利回り目安：${el('reqy').textContent}）` : ''
-      ].filter(Boolean).join('\n');
-
-      try{
-        await navigator.clipboard.writeText(text);
-        alert('コピーしました');
-      }catch(e){
-        prompt('コピーできない場合は手動でコピーしてください', text);
-      }
-    });
-
-    attachChips();
-    wireInputs();
-    load();
-
-    // defaults
-    if(!el('timemode').value) el('timemode').value='months';
-    if(!el('months').value) el('months').value='36';
-    if(!el('ltv').value) el('ltv').value='80';
-    if(!el('costpct').value) el('costpct').value='8';
-    if(!el('rate').value) el('rate').value='2.0';
-    if(!el('term').value) el('term').value='25';
-    if(!el('noiy').value) el('noiy').value='5.0';
-    if(!el('dscrT').value) el('dscrT').value='1.20';
-
-    if(!el('taxrate').value) el('taxrate').value='30';
-    if(!el('vr1').value) el('vr1').value='20';
-    if(!el('vr2').value) el('vr2').value='20';
-    if(!el('vr3').value) el('vr3').value='20';
-    if(!el('d1').value) el('d1').value=fmt(0);
-    if(!el('d2').value) el('d2').value=fmt(0);
-    if(!el('d3').value) el('d3').value=fmt(0);
-    if(!el('cap1').value) el('cap1').value=fmt(0);
-    if(!el('cap2').value) el('cap2').value=fmt(0);
-    if(!el('cap3').value) el('cap3').value=fmt(0);
-    if(!el('out1').value) el('out1').value=fmt(0);
-    if(!el('out2').value) el('out2').value=fmt(0);
-    if(!el('out3').value) el('out3').value=fmt(0);
-    if(!el('wc1').value) el('wc1').value=fmt(0);
-    if(!el('wc2').value) el('wc2').value=fmt(0);
-    if(!el('wc3').value) el('wc3').value=fmt(0);
-
-    setTimeMode();
-    recalc();
-  }
-  init();
+// Init
+update();
 </script>
 </body>
 </html>
