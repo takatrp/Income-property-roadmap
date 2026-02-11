@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>収益不動産 取得資金ロードマップ｜r4</title>
+  <title>収益不動産 取得資金シミュレーター｜r5</title>
   <style>
     :root{
-      --bg:#f8fafc; --card:#fff; --text:#1e293b; --sub:#64748b; --border:#cbd5e1;
+      --bg:#f1f5f9; --card:#fff; --text:#1e293b; --sub:#64748b; --border:#cbd5e1;
       --primary:#0f766e; --primary-light:#ccfbf1;
       --ok:#15803d; --ok-bg:#dcfce7;
       --warn:#b45309; --warn-bg:#fef3c7;
@@ -16,62 +16,57 @@
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",sans-serif;line-height:1.4}
     
-    /* Layout */
     .container{max-width:1200px;margin:0 auto;padding:1rem}
-    .grid-top{display:grid;grid-template-columns:1fr;gap:1.5rem;margin-bottom:1.5rem}
-    @media(min-width:900px){.grid-top{grid-template-columns:350px 1fr}} /* Left:Inputs, Right:Dash */
+    .grid-top{display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1rem}
+    @media(min-width:900px){.grid-top{grid-template-columns:350px 1fr}}
 
-    /* Card */
-    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,0.05);overflow:hidden;border:1px solid var(--border);margin-bottom:1.5rem}
-    .card-hd{padding:0.8rem 1rem;border-bottom:1px solid var(--border);background:#f1f5f9;display:flex;justify-content:space-between;align-items:center;font-weight:bold;color:var(--text)}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,0.05);overflow:hidden;border:1px solid var(--border);margin-bottom:1rem}
+    .card-hd{padding:0.8rem 1rem;border-bottom:1px solid var(--border);background:#f8fafc;display:flex;justify-content:space-between;align-items:center;font-weight:bold;color:var(--text)}
     .card-bd{padding:1.2rem}
 
-    /* Inputs */
     label{display:block;font-size:0.8rem;color:var(--sub);font-weight:bold;margin-bottom:0.3rem}
-    input,select{width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:6px;font-size:0.95rem;background:#fff;text-align:right}
+    input{width:100%;padding:0.6rem;border:1px solid var(--border);border-radius:6px;font-size:1rem;background:#fff;text-align:right;font-variant-numeric:tabular-nums}
     input:focus{outline:2px solid var(--primary);border-color:transparent}
     .input-group{margin-bottom:1rem}
     .row{display:flex;gap:0.8rem}
     .row > *{flex:1}
     
-    /* Chips */
     .chips{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.3rem;justify-content:flex-end}
     .chip{font-size:0.75rem;padding:0.2rem 0.6rem;border:1px solid var(--border);border-radius:99px;background:#fff;cursor:pointer;color:var(--sub)}
     .chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
 
-    /* Dashboard (Result) */
-    .status-box{padding:1.2rem;text-align:center;border-radius:var(--radius);margin-bottom:1.2rem;border:2px solid transparent}
+    /* Dashboard */
+    .status-box{padding:1.2rem;text-align:center;border-radius:var(--radius);margin-bottom:1rem;border:2px solid transparent;position:relative;overflow:hidden}
     .status-box.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
     .status-box.ng{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
-    .status-icon{font-size:1.8rem;display:block;margin-bottom:0.2rem}
-    .status-main{font-size:1.6rem;font-weight:900}
     
+    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+    .kpi-card{background:rgba(255,255,255,0.6);padding:0.8rem;border-radius:8px;text-align:center}
+    .kpi-lbl{font-size:0.75rem;opacity:0.8;font-weight:bold;margin-bottom:0.3rem}
+    .kpi-val{font-size:1.1rem;font-weight:900}
+    .kpi-val.red{color:var(--danger)}
+
     /* Bar Chart */
-    .bar-chart-wrap{margin:1rem 0}
-    .bar-track{height:2.2rem;background:#f1f5f9;border-radius:6px;overflow:hidden;display:flex;position:relative;margin-bottom:0.3rem}
-    .bar-seg{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;font-weight:bold;white-space:nowrap;overflow:hidden;transition:width 0.4s ease}
+    .bar-track{height:2rem;background:#f1f5f9;border-radius:6px;overflow:hidden;display:flex;margin:0.5rem 0}
+    .bar-seg{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.7rem;font-weight:bold;white-space:nowrap;overflow:hidden;transition:width 0.5s cubic-bezier(0.4, 0, 0.2, 1)}
     .bs-loan{background:#94a3b8} 
     .bs-now{background:#0f766e} 
     .bs-fut{background:#2dd4bf;color:#0f4c3a} 
     .bs-gap{background:#ef4444}
-    
-    /* Line Chart */
-    .chart-container{position:relative;height:180px;width:100%;margin-top:1rem;border-left:1px solid var(--border);border-bottom:1px solid var(--border)}
-    svg{width:100%;height:100%;overflow:visible}
-    .line-target{stroke:#ef4444;stroke-width:2;stroke-dasharray:4}
-    .line-plan{stroke:#0f766e;stroke-width:3;fill:none}
-    .dot{stroke-width:2;r:4}
 
     /* PL Table */
     .tbl-wrap{overflow-x:auto}
-    .tbl{width:100%;border-collapse:collapse;font-size:0.9rem;min-width:600px}
+    .tbl{width:100%;border-collapse:collapse;font-size:0.9rem;min-width:650px}
     .tbl th,.tbl td{padding:0.6rem;border-bottom:1px solid #e2e8f0;text-align:right}
-    .tbl th{text-align:left;color:var(--sub);background:#f8fafc;width:140px;position:sticky;left:0}
+    .tbl th{text-align:left;color:var(--sub);background:#f8fafc;width:160px;position:sticky;left:0}
     .tbl input{border:1px solid #e2e8f0;background:#fff;width:100%}
     .tbl input:focus{background:#fff;border-color:var(--primary)}
-    .tbl tr:last-child td{font-weight:bold;background:#f0fdf4;border-bottom:none}
+    .tbl tr:last-child td{font-weight:bold;background:#f0fdf4;border-bottom:none;color:var(--primary)}
 
-    /* Print */
+    /* Action Box */
+    .action-box{background:#fff;border:1px dashed var(--warn);border-radius:8px;padding:1rem;margin-top:1rem;font-size:0.9rem}
+    .action-title{font-weight:bold;color:var(--warn);display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem}
+
     @media print{
       .no-print{display:none}
       body{background:#fff}
@@ -84,32 +79,33 @@
 
 <div class="container">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-    <h1 style="font-size:1.3rem;margin:0">収益不動産 取得資金ロードマップ <span style="font-size:0.8rem;font-weight:normal;color:var(--sub)">r4 (PL連動版)</span></h1>
-    <button class="chip no-print" onclick="window.print()" style="font-weight:bold;font-size:0.9rem">🖨 印刷 / PDF</button>
+    <h1 style="font-size:1.2rem;margin:0">収益不動産 取得資金シミュレーター <span style="font-size:0.8rem;font-weight:normal;color:var(--sub)">r5</span></h1>
+    <button class="chip no-print" onclick="window.print()" style="font-weight:bold">🖨 印刷 / PDF</button>
   </div>
 
   <div class="grid-top">
     
     <div class="no-print-break">
       <section class="card">
-        <div class="card-hd">1. 目標と現状</div>
+        <div class="card-hd">1. 目標設定</div>
         <div class="card-bd">
           <div class="input-group">
             <label>物件価格（円）</label>
-            <input id="price" type="text" data-fmt placeholder="80,000,000">
+            <input id="price" type="text" inputmode="numeric" placeholder="例: 80,000,000">
             <div class="chips">
               <button class="chip" data-set="price" data-val="50000000">5,000万</button>
+              <button class="chip" data-set="price" data-val="80000000">8,000万</button>
               <button class="chip" data-set="price" data-val="100000000">1億</button>
             </div>
           </div>
 
           <div class="row">
             <div class="input-group">
-              <label>LTV（借入 %）</label>
+              <label>借入 (LTV %)</label>
               <input id="ltv" type="number" value="80">
             </div>
             <div class="input-group">
-              <label>諸費用（%）</label>
+              <label>諸費用 (%)</label>
               <input id="costRate" type="number" value="8">
             </div>
           </div>
@@ -120,38 +116,37 @@
             <div style="font-size:0.75rem;color:var(--sub);text-align:right" id="targetDate"></div>
           </div>
 
-          <div class="input-group" style="margin-top:1.5rem;border-top:1px dashed var(--border);padding-top:1rem">
+          <div class="input-group" style="border-top:1px dashed var(--border);padding-top:1rem">
             <label>現在の自己資金（円）</label>
-            <input id="cashNow" type="text" data-fmt placeholder="5,000,000">
+            <input id="cashNow" type="text" inputmode="numeric" placeholder="0">
           </div>
         </div>
       </section>
-      
-      <div style="font-size:0.85rem;color:var(--sub);padding:0 0.5rem">
-        <p>※下の「3. 事業計画(PL)」を入力すると、右側のグラフに「将来の積立」として反映されます。</p>
-      </div>
     </div>
 
     <div>
       <div id="statusBox" class="status-box ng">
-        <span class="status-icon" id="statusIcon">⚠️</span>
-        <div class="status-main" id="statusText">判定不能</div>
-        <div style="font-size:0.9rem;opacity:0.9" id="statusSub">数値を入力してください</div>
+        <div style="font-size:2rem;margin-bottom:0.5rem" id="statusIcon">⚠️</div>
+        <div style="font-weight:900;font-size:1.4rem" id="statusText">資金不足</div>
+        <div style="margin-top:0.5rem">あと <span id="statusGap" style="font-weight:bold;font-size:1.2rem">0</span> 円 足りません</div>
+        
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-lbl">月あたりの不足額</div>
+            <div class="kpi-val red" id="monthlyGap">¥0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-lbl">購入時 必要自己資金</div>
+            <div class="kpi-val" id="needOwn">¥0</div>
+          </div>
+        </div>
       </div>
 
       <section class="card">
-        <div class="card-hd">2. 資金調達構成</div>
-        <div class="card-bd">
-          
-          <div style="font-size:0.8rem;display:flex;justify-content:space-between;font-weight:bold;margin-bottom:0.2rem">
-            <span>必要総額</span> <span id="labelTotal">¥0</span>
-          </div>
-          <div class="bar-track" style="height:1.5rem;background:#e2e8f0;margin-bottom:0.8rem">
-             <div style="width:100%;color:#64748b;display:flex;align-items:center;justify-content:center;font-size:0.75rem">必要資金 (100%)</div>
-          </div>
-
-          <div style="font-size:0.8rem;display:flex;justify-content:space-between;font-weight:bold;margin-bottom:0.2rem">
-            <span>調達内訳（現状＋計画）</span> <span id="labelPrep">¥0</span>
+        <div class="card-bd" style="padding-bottom:0.5rem">
+          <div style="font-size:0.8rem;display:flex;justify-content:space-between;font-weight:bold">
+            <span>必要総額: <span id="labelTotal">0</span></span>
+            <span>準備可能: <span id="labelPrep">0</span></span>
           </div>
           <div class="bar-track">
             <div id="segLoan" class="bar-seg bs-loan" style="width:0%"></div>
@@ -159,20 +154,17 @@
             <div id="segFut" class="bar-seg bs-fut" style="width:0%"></div>
             <div id="segGap" class="bar-seg bs-gap" style="width:0%"></div>
           </div>
-          
-          <div style="display:flex;gap:0.8rem;flex-wrap:wrap;font-size:0.75rem;color:var(--sub);margin-top:0.5rem">
+          <div style="display:flex;gap:0.8rem;flex-wrap:wrap;font-size:0.7rem;color:var(--sub);margin-top:0.5rem">
             <span style="color:#64748b">■借入</span>
             <span style="color:#0f766e">■現在資金</span>
             <span style="color:#2dd4bf;font-weight:bold">■将来積立(PL)</span>
             <span style="color:#ef4444;font-weight:bold">■不足</span>
           </div>
-
-          <div class="chart-container">
-            <svg id="lineChart" viewBox="0 0 300 180" preserveAspectRatio="none"></svg>
-            <div style="position:absolute;top:-5px;right:0;font-size:0.7rem;color:#ef4444;font-weight:bold">必要額</div>
-            <div style="position:absolute;bottom:-20px;left:0;font-size:0.7rem;color:var(--sub)">現在</div>
-            <div style="position:absolute;bottom:-20px;right:0;font-size:0.7rem;color:var(--sub)">3年後</div>
-          </div>
+        </div>
+        
+        <div class="action-box" id="actionBox" style="margin:0 1rem 1rem 1rem">
+          <div class="action-title">💡 社長へのご提案（逆算）</div>
+          <div id="actionMsg">3年PLを入力すると、具体的な対策が表示されます。</div>
         </div>
       </section>
     </div>
@@ -180,22 +172,20 @@
 
   <section class="card">
     <div class="card-hd">
-      <span>3. 事業計画 (3カ年PL / キャッシュフロー)</span>
-      <small style="font-weight:normal">ここで計算された「税後CF(内部留保)」がグラフの緑部分になります</small>
+      <span>2. 事業計画 (3カ年PL / キャッシュフロー)</span>
+      <small style="font-weight:normal;color:var(--sub)">ここを入力すると、グラフの緑（積立）が増えます</small>
     </div>
     <div class="card-bd">
-      <div class="row" style="max-width:300px;margin-bottom:1rem">
-        <div class="input-group" style="margin:0">
-          <label>実効税率（%）</label>
-          <input id="taxRate" type="number" value="30">
-        </div>
+      <div style="max-width:200px;margin-bottom:1rem">
+        <label>実効税率 (%)</label>
+        <input id="taxRate" type="number" value="30" style="text-align:right">
       </div>
 
       <div class="tbl-wrap">
         <table class="tbl">
           <thead>
             <tr>
-              <th>項目 (単位:円)</th>
+              <th>項目 (円)</th>
               <th>1年目</th>
               <th>2年目</th>
               <th>3年目</th>
@@ -204,30 +194,30 @@
           <tbody>
             <tr>
               <th>売上高</th>
-              <td><input class="pl-in" id="s1" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="s2" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="s3" data-fmt placeholder="0"></td>
+              <td><input class="pl-in" id="s1" inputmode="numeric"></td>
+              <td><input class="pl-in" id="s2" inputmode="numeric"></td>
+              <td><input class="pl-in" id="s3" inputmode="numeric"></td>
             </tr>
             <tr>
-              <th>変動費 (原価等)</th>
-              <td><input class="pl-in" id="v1" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="v2" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="v3" data-fmt placeholder="0"></td>
+              <th>変動費 (原価/広告)</th>
+              <td><input class="pl-in" id="v1" inputmode="numeric"></td>
+              <td><input class="pl-in" id="v2" inputmode="numeric"></td>
+              <td><input class="pl-in" id="v3" inputmode="numeric"></td>
             </tr>
             <tr>
-              <th>固定費 (人件費/家賃等)</th>
-              <td><input class="pl-in" id="f1" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="f2" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="f3" data-fmt placeholder="0"></td>
+              <th>固定費 (人件費/家賃)</th>
+              <td><input class="pl-in" id="f1" inputmode="numeric"></td>
+              <td><input class="pl-in" id="f2" inputmode="numeric"></td>
+              <td><input class="pl-in" id="f3" inputmode="numeric"></td>
             </tr>
             <tr>
               <th>減価償却費 (非資金)</th>
-              <td><input class="pl-in" id="d1" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="d2" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="d3" data-fmt placeholder="0"></td>
+              <td><input class="pl-in" id="d1" inputmode="numeric"></td>
+              <td><input class="pl-in" id="d2" inputmode="numeric"></td>
+              <td><input class="pl-in" id="d3" inputmode="numeric"></td>
             </tr>
-            <tr style="background:#f8fafc;font-weight:bold;color:var(--sub)">
-              <th>税引前利益 (計算)</th>
+            <tr style="background:#f1f5f9;color:var(--sub)">
+              <th>税引前利益</th>
               <td id="pbt1">0</td><td id="pbt2">0</td><td id="pbt3">0</td>
             </tr>
             <tr style="color:var(--sub)">
@@ -235,75 +225,69 @@
               <td id="tax1">0</td><td id="tax2">0</td><td id="tax3">0</td>
             </tr>
             <tr>
-              <th>税引後利益 (計算)</th>
-              <td id="np1">0</td><td id="np2">0</td><td id="np3">0</td>
+              <th>既存返済/生活費 (－)</th>
+              <td><input class="pl-in" id="out1" inputmode="numeric" placeholder="公庫返済等はここ"></td>
+              <td><input class="pl-in" id="out2" inputmode="numeric"></td>
+              <td><input class="pl-in" id="out3" inputmode="numeric"></td>
             </tr>
             <tr>
-              <th>返済/生活費/投資等 (－)</th>
-              <td><input class="pl-in" id="out1" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="out2" data-fmt placeholder="0"></td>
-              <td><input class="pl-in" id="out3" data-fmt placeholder="0"></td>
-            </tr>
-            <tr style="background:#dcfce7;border-top:2px solid var(--primary)">
-              <th style="color:var(--primary)">★税後CF (内部留保)</th>
-              <td id="fcf1" style="color:var(--primary)">0</td>
-              <td id="fcf2" style="color:var(--primary)">0</td>
-              <td id="fcf3" style="color:var(--primary)">0</td>
+              <th>★ 税後CF (内部留保)</th>
+              <td id="fcf1">0</td><td id="fcf2">0</td><td id="fcf3">0</td>
             </tr>
           </tbody>
         </table>
-      </div>
-      <div style="font-size:0.8rem;color:var(--sub);margin-top:0.5rem">
-        ※計算式：税後CF = 税引後利益 + 減価償却費 - (返済/生活費/投資等)<br>
-        ※この「税後CF」の3年分を月割りし、取得時期までの月数分を積立額として計算します。
       </div>
     </div>
   </section>
 </div>
 
 <script>
-// Logic Utilities
+// --- Utils ---
 const el = id => document.getElementById(id);
 const fmt = n => isNaN(n) ? "0" : n.toLocaleString('ja-JP');
 const yen = n => "¥" + fmt(Math.round(n));
 const parse = v => {
   if(!v) return 0;
-  return parseFloat(String(v).replace(/,/g, '')) || 0;
+  const s = String(v).replace(/,/g, '');
+  return parseFloat(s) || 0;
 }
 
-// Data Binding
-const inputs = [
-  'price','ltv','costRate','months','cashNow','taxRate',
-  's1','s2','s3','v1','v2','v3','f1','f2','f3','d1','d2','d3','out1','out2','out3'
-];
-
-function init(){
-  inputs.forEach(id => {
-    const dom = el(id);
-    if(!dom) return;
-    dom.addEventListener('input', update);
-    dom.addEventListener('blur', () => {
-      if(dom.dataset.fmt !== undefined) dom.value = fmt(parse(dom.value));
+// --- Real-time Comma Formatting ---
+function attachRealtimeFormat() {
+  const inputs = document.querySelectorAll('input[inputmode="numeric"]');
+  inputs.forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      // 1. カーソル位置の保持（簡易版：末尾に行くのを防ぐ努力はするが、カンマ増減でズレるため基本は再フォーマット）
+      const raw = e.target.value.replace(/,/g, '');
+      if(raw === '') return;
+      if(isNaN(raw)) {
+        e.target.value = ''; 
+        update(); 
+        return;
+      }
+      const val = parseFloat(raw);
+      e.target.value = val.toLocaleString('ja-JP');
+      update();
     });
-  });
-  
-  // Chip buttons
-  document.querySelectorAll('.chip[data-set]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.set;
-      const val = btn.dataset.val;
-      const dom = el(id);
-      dom.value = dom.dataset.fmt !== undefined ? fmt(Number(val)) : val;
+    // Blur時に変な文字があれば消す
+    inp.addEventListener('blur', (e) => {
       update();
     });
   });
-  
-  update();
 }
 
-function calcPL(){
+// --- Logic ---
+function update() {
+  // 1. Basic Inputs
+  const price = parse(el('price').value);
+  const ltv = parse(el('ltv').value);
+  const costRate = parse(el('costRate').value);
+  const months = Math.max(1, parse(el('months').value));
+  const cashNow = parse(el('cashNow').value);
   const taxRate = parse(el('taxRate').value) / 100;
-  const years = [1,2,3].map(i => {
+
+  // 2. PL Calculation
+  const pl = [1,2,3].map(i => {
     const s = parse(el(`s${i}`).value);
     const v = parse(el(`v${i}`).value);
     const f = parse(el(`f${i}`).value);
@@ -317,109 +301,127 @@ function calcPL(){
 
     return { s, v, f, d, out, pbt, tax, np, fcf };
   });
-  return years;
-}
 
-function update(){
-  // 1. Basic Inputs
-  const price = parse(el('price').value);
-  const ltv = parse(el('ltv').value);
-  const costRate = parse(el('costRate').value);
-  const months = parse(el('months').value);
-  const cashNow = parse(el('cashNow').value);
-  
-  // 2. PL Calculation
-  const pl = calcPL();
-  
-  // Render PL Table
+  // Render PL Results
   pl.forEach((y, i) => {
     const idx = i+1;
     el(`pbt${idx}`).innerText = fmt(Math.round(y.pbt));
     el(`tax${idx}`).innerText = fmt(Math.round(y.tax));
-    el(`np${idx}`).innerText = fmt(Math.round(y.np));
     el(`fcf${idx}`).innerText = fmt(Math.round(y.fcf));
   });
 
-  // 3. Future Accumulation (Prorated)
-  // 3年間のFCF合計を36ヶ月で割り、指定月数分を積むイメージ
-  // (より厳密には月ごとに積むが、簡易シミュレーションとして平均化)
-  let totalFCF3Years = pl.reduce((acc, y) => acc + y.fcf, 0);
-  let avgMonthlyFCF = totalFCF3Years / 36; 
-  // もし3年PLがすべて0なら0
-  if(totalFCF3Years === 0) avgMonthlyFCF = 0;
-  
+  // 3. Future Cash Logic (3年合計を月数で按分積立とみなす)
+  const totalFCF3Years = pl.reduce((acc, y) => acc + y.fcf, 0);
+  const avgMonthlyFCF = totalFCF3Years / 36; 
   const futureCash = avgMonthlyFCF * months;
-  const totalPrepared = cashNow + futureCash;
-
-  // 4. Requirements
+  
+  // 4. Totals
   const costs = price * (costRate / 100);
   const totalNeeded = price + costs;
   const loan = price * (ltv / 100);
-  const gap = totalNeeded - (loan + totalPrepared);
+  
+  // 必要な自己資金 (借入以外で用意すべき金)
+  const needOwn = Math.max(0, totalNeeded - loan);
+  const totalPrepared = cashNow + futureCash;
+  const gap = Math.max(0, needOwn - totalPrepared);
+  const monthlyGap = gap / months;
 
-  // 5. Update Status
+  // 5. Update Dashboard
   const statusBox = el('statusBox');
-  if(price === 0){
+  const statusText = el('statusText');
+  const statusGap = el('statusGap');
+  const statusIcon = el('statusIcon');
+
+  if(price === 0) {
     statusBox.className = "status-box";
-    el('statusIcon').innerText = "🔢";
-    el('statusText').innerText = "数値入力待ち";
-    el('statusSub').innerText = "物件価格やPLを入力してください";
-  } else if(gap <= 0){
+    statusIcon.innerText = "🔢";
+    statusText.innerText = "数値を入力";
+    statusGap.innerText = "0";
+    el('monthlyGap').innerText = "—";
+    el('needOwn').innerText = "—";
+  } else if(gap <= 0) {
     statusBox.className = "status-box ok";
-    el('statusIcon').innerText = "✅";
-    el('statusText').innerText = "達成可能";
-    el('statusSub').innerText = `計画通りなら資金は足ります（余力 ${yen(Math.abs(gap))}）`;
+    statusIcon.innerText = "✅";
+    statusText.innerText = "達成圏内";
+    statusGap.innerText = "0";
+    el('monthlyGap').innerText = "不足なし";
+    el('monthlyGap').style.color = "var(--ok)";
+    el('needOwn').innerText = yen(needOwn);
   } else {
     statusBox.className = "status-box ng";
-    el('statusIcon').innerText = "⚠️";
-    el('statusText').innerText = `不足：${yen(gap)}`;
-    el('statusSub').innerText = "PLを見直し、利益(内部留保)を増やしてください";
+    statusIcon.innerText = "⚠️";
+    statusText.innerText = "資金不足";
+    statusGap.innerText = fmt(Math.round(gap));
+    el('monthlyGap').innerText = yen(monthlyGap);
+    el('monthlyGap').style.color = "var(--danger)";
+    el('needOwn').innerText = yen(needOwn);
   }
 
-  // 6. Update Bar Chart
-  const maxVal = Math.max(totalNeeded, loan + totalPrepared) || 1;
-  const pct = v => (v / maxVal) * 100;
-  
+  // Bar Chart
+  const maxScale = Math.max(totalNeeded, loan + totalPrepared) || 1;
   el('labelTotal').innerText = yen(totalNeeded);
   el('labelPrep').innerText = yen(loan + totalPrepared);
-
+  
+  const pct = v => (v / maxScale) * 100;
   el('segLoan').style.width = pct(loan) + "%";
-  el('segLoan').innerText = pct(loan)>10 ? `借入${yen(loan)}` : "";
-  
+  el('segLoan').innerText = pct(loan)>10 ? "借入" : "";
   el('segNow').style.width = pct(cashNow) + "%";
-  el('segNow').innerText = pct(cashNow)>10 ? `現${yen(cashNow)}` : "";
-  
+  el('segNow').innerText = pct(cashNow)>8 ? "現" : "";
   el('segFut').style.width = pct(futureCash) + "%";
-  el('segFut').innerText = pct(futureCash)>10 ? `積${yen(futureCash)}` : "";
-  
-  el('segGap').style.width = (gap>0 ? pct(gap) : 0) + "%";
-
-  // 7. Update Line Chart
-  const svg = el('lineChart');
-  const w = 300, h = 180;
-  const maxY = Math.max(totalNeeded - loan, totalPrepared * 1.1, 100000); // 借入除いた必要自己資金ベースで描画
-  const getY = v => h - ((v / maxY) * h);
-  
-  // Target Line (Need - Loan)
-  const targetVal = Math.max(0, totalNeeded - loan);
-  const yT = getY(targetVal);
-  const lineT = `<line x1="0" y1="${yT}" x2="${w}" y2="${yT}" class="line-target" />`;
-  
-  // Plan Line
-  const yStart = getY(cashNow);
-  const yEnd = getY(totalPrepared);
-  const lineP = `<line x1="0" y1="${yStart}" x2="${w}" y2="${yEnd}" class="line-plan" />`;
-  const dotP = `<circle cx="${w}" cy="${yEnd}" class="dot" fill="${gap<=0 ? '#15803d':'#ef4444'}" />`;
-  
-  svg.innerHTML = lineT + lineP + dotP;
+  el('segFut').innerText = pct(futureCash)>8 ? "積" : "";
+  el('segGap').style.width = pct(gap) + "%";
 
   // Date
   const d = new Date();
   d.setMonth(d.getMonth() + months);
-  el('targetDate').innerText = `目標：${d.getFullYear()}年${d.getMonth()+1}月`;
+  el('targetDate').innerText = `目標: ${d.getFullYear()}年${d.getMonth()+1}月`;
+
+  // 6. Action Insight (Reverse Engineering)
+  // 月あたりの不足額を埋めるには、利益率(粗利-税金考慮)で割り戻して必要な売上増を出す
+  // 簡易的に「限界利益率(粗利率)」で割り戻す
+  const actionBox = el('actionBox');
+  const actionMsg = el('actionMsg');
+  
+  if(gap > 0 && pl[0].s > 0) {
+    // 直近(1年目)の変動費率などから算出
+    const s1 = pl[0].s;
+    const v1 = pl[0].v; // 変動費
+    const grossMarginRate = s1 > 0 ? (s1 - v1) / s1 : 1; // 限界利益率
+    const taxEffect = 1 - taxRate;
+    
+    // 必要な追加税引前利益 = 月不足額 / (1-税率)
+    // 必要な追加売上 = 必要な追加税引前利益 / 限界利益率
+    const neededPBT = monthlyGap / taxEffect;
+    const neededSalesMonthly = grossMarginRate > 0 ? neededPBT / grossMarginRate : neededPBT;
+    
+    actionMsg.innerHTML = `
+      不足額（月 <b>${yen(monthlyGap)}</b>）を埋めるためのヒント：<br>
+      現在の利益構造なら、<span style="color:#b91c1c;font-weight:bold;font-size:1.1rem">月商をあと ${yen(neededSalesMonthly)} アップ</span> 
+      すれば達成可能です。<br>
+      <small style="color:var(--sub)">※税金(${Math.round(taxRate*100)}%)考慮済。ここを毎月チェックしましょう。</small>
+    `;
+    actionBox.style.display = 'block';
+  } else if (gap > 0) {
+    actionMsg.innerText = "下のPL（売上や経費）を入力すると、不足を埋めるための「必要売上高」を自動計算します。";
+    actionBox.style.display = 'block';
+  } else {
+    actionBox.style.display = 'none';
+  }
 }
 
-init();
+// Setup
+attachRealtimeFormat();
+document.querySelectorAll('.chip').forEach(b => {
+  b.addEventListener('click', () => {
+    const i = el(b.dataset.set);
+    i.value = Number(b.dataset.val).toLocaleString('ja-JP');
+    update();
+  });
+});
+document.querySelectorAll('input').forEach(i => i.addEventListener('change', update));
+
+// Init
+update();
 </script>
 </body>
 </html>
