@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>収益不動産 取得資金シミュレーター｜r12</title>
+  <title>収益不動産 取得資金シミュレーター｜r13</title>
   <style>
     :root{
       --bg:#f1f5f9; --card:#fff; --text:#0f172a; --sub:#64748b; --border:#cbd5e1;
@@ -113,7 +113,7 @@
 
 <div class="container">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-    <h1 style="font-size:1.2rem;margin:0;font-weight:800;color:var(--primary)">収益不動産 取得資金シミュレーター <span style="font-size:0.8rem;font-weight:normal;color:var(--sub)">r12</span></h1>
+    <h1 style="font-size:1.2rem;margin:0;font-weight:800;color:var(--primary)">収益不動産 取得資金シミュレーター <span style="font-size:0.8rem;font-weight:normal;color:var(--sub)">r13</span></h1>
     <div class="no-print">
       <button class="chip" onclick="window.print()">🖨 印刷/PDF</button>
       <button class="btn-reset" id="btnReset">↺ リセット</button>
@@ -172,8 +172,12 @@
             <td><input class="pl-in" id="s1" inputmode="numeric"></td>
           </tr>
           <tr>
-            <th>変動費</th>
-            <td><input class="pl-in" id="v1" inputmode="numeric"></td>
+            <th>限界利益率 (%)</th>
+            <td><input class="pl-in" id="marginRate" type="number" value="80" style="text-align:right"></td>
+          </tr>
+          <tr style="color:var(--sub)">
+            <th>限界利益 (自動計算)</th>
+            <td id="grossMargin">0</td>
           </tr>
           <tr>
             <th>固定費</th>
@@ -196,7 +200,7 @@
             <td><input class="pl-in" id="out1" inputmode="numeric" placeholder="0"></td>
           </tr>
           <tr style="border-top:2px solid var(--primary);background:#f0fdf4">
-            <th>★ 税後CF(内部留保)</th>
+            <th>★ 税引後キャッシュフロー(内部留保)</th>
             <td id="fcf1">0</td>
           </tr>
         </table>
@@ -308,12 +312,18 @@ function update() {
 
   // 2. PL Calculation (Single Year)
   const s1 = parse(el('s1').value);
-  const v1 = parse(el('v1').value);
+  const marginRateVal = parse(el('marginRate').value); // Percent
+  const marginRate = marginRateVal / 100;
+  
+  // Calculate Gross Margin
+  const grossMargin = s1 * marginRate;
+  el('grossMargin').innerText = fmt(Math.round(grossMargin));
+
   const f1 = parse(el('f1').value);
   const d1 = parse(el('d1').value);
   const out1 = parse(el('out1').value);
 
-  const pbt = s1 - v1 - f1 - d1;
+  const pbt = grossMargin - f1 - d1;
   const tax = Math.max(0, pbt * taxRate);
   const np = pbt - tax;
   const fcf = np + d1 - out1; // Annual FCF
@@ -388,7 +398,7 @@ function update() {
   // 6. Action Insight (Reverse Calc)
   const insightBox = el('insightBox');
   if(gap > 0 && s1 > 0){
-    const marginRate = (s1 - v1) / s1; 
+    // Use marginRate from input
     if(marginRate > 0){
       const taxEffect = 1 - taxRate;
       const neededPBT = monthlyGap / taxEffect;
@@ -457,6 +467,7 @@ function reset(){
   el('costRate').value = "8";
   el('months').value = "36";
   el('taxRate').value = "30";
+  el('marginRate').value = "80";
   update();
 }
 
